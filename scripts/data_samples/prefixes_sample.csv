@@ -1,0 +1,4 @@
+prefix,city,province,operator,is_mobile,is_valid
+011,Buenos Aires,CABA,,false,true
+0221,La Plata,Buenos Aires,,false,true
+0351,Cordoba,Cordoba,,false,true
