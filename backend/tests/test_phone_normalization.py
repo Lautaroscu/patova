@@ -1,7 +1,11 @@
+import pytest
+
 from numguard.services.phone_normalization import (
     extract_argentina_prefix,
     normalize_to_e164,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestNormalizeE164:

@@ -4,6 +4,8 @@ from httpx import ASGITransport, AsyncClient
 from numguard.core.config import get_settings
 from numguard.main import create_app
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def _app():

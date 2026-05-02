@@ -11,7 +11,7 @@ from numguard.models.area_prefix import AreaPrefix
 from numguard.models.enums import NumberStatus
 from numguard.models.phone_number import PhoneNumber
 
-pytestmark = pytest.mark.db
+pytestmark = pytest.mark.integration
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 SEED_SCRIPT = str(REPO_ROOT / "scripts" / "seed_import.py")

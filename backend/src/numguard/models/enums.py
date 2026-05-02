@@ -1,14 +1,14 @@
-import enum
+from enum import StrEnum
 
 
-class NumberStatus(str, enum.Enum):
+class NumberStatus(StrEnum):
     CLEAN = "CLEAN"
     SUSPECT = "SUSPECT"
     SPAM = "SPAM"
     UNVERIFIED = "UNVERIFIED"
 
 
-class NumberSource(str, enum.Enum):
+class NumberSource(StrEnum):
     ENACOM = "ENACOM"
     CROWDSOURCE = "CROWDSOURCE"
     AI_AGENT = "AI_AGENT"
@@ -16,7 +16,7 @@ class NumberSource(str, enum.Enum):
     SEED = "SEED"
 
 
-class ReportType(str, enum.Enum):
+class ReportType(StrEnum):
     SPAM_CALL = "SPAM_CALL"
     ROBOCALL = "ROBOCALL"
     SCAM = "SCAM"
@@ -24,7 +24,7 @@ class ReportType(str, enum.Enum):
     OTHER = "OTHER"
 
 
-class FeedbackType(str, enum.Enum):
+class FeedbackType(StrEnum):
     FALSE_POSITIVE = "FALSE_POSITIVE"
     WAS_SPAM = "WAS_SPAM"
     CORRECT_BLOCK = "CORRECT_BLOCK"

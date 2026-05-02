@@ -8,7 +8,7 @@ from numguard.models.enums import NumberSource, NumberStatus, ReportType
 from numguard.models.phone_number import PhoneNumber
 from numguard.models.report import Report
 
-pytestmark = pytest.mark.db
+pytestmark = pytest.mark.integration
 
 
 @pytest.fixture

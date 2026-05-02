@@ -14,6 +14,8 @@ from numguard.services.cache_service import (
     set_cached_result,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestCacheKey:
     def test_key_does_not_contain_raw_number(self):

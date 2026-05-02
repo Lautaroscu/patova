@@ -7,6 +7,8 @@ from numguard.core.config import get_settings
 from numguard.db.redis import get_redis_client
 from numguard.main import create_app
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def _app():

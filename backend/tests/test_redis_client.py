@@ -1,5 +1,8 @@
+import pytest
 
 from numguard.db.redis import get_redis_client
+
+pytestmark = pytest.mark.integration
 
 
 async def test_redis_ping():

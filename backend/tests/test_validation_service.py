@@ -12,6 +12,8 @@ from numguard.services.validation_service import (
     _prefix_zone,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestPrefixZone:
     def test_zone_with_different_city_and_province(self):

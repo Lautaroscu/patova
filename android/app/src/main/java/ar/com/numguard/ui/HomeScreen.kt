@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onNavigateToHistory: () -> Unit = {}) {
     val context = LocalContext.current
     val isConfigured = remember { mutableStateOf(checkIfScreeningConfigured(context)) }
 
@@ -106,6 +106,15 @@ fun HomeScreen() {
                     "Activar NumGuard como app de screening"
                 }
             )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = onNavigateToHistory,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Historial de llamadas")
         }
 
         Spacer(modifier = Modifier.height(16.dp))

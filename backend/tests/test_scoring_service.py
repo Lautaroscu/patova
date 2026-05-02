@@ -1,11 +1,15 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
+import pytest
+
 from numguard.services.scoring_service import (
     calculate_spam_score,
     get_reports_last_24h,
     should_auto_block,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _make_reports(count: int, hours_ago: int = 0) -> list[MagicMock]:

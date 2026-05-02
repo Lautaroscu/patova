@@ -1,6 +1,9 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from numguard.core.config import get_settings
+
+pytestmark = pytest.mark.unit
 
 VALID_KEY = get_settings().numguard_api_key
 

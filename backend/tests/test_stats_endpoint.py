@@ -5,6 +5,8 @@ from numguard.core.config import get_settings
 from numguard.main import create_app
 from numguard.services.stats_service import mask_e164
 
+pytestmark = pytest.mark.integration
+
 
 @pytest.fixture(scope="module")
 def _app():

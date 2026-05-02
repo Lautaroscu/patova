@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = "local"
     app_name: str = "NumGuard API"
@@ -22,6 +22,9 @@ class Settings(BaseSettings):
 
     auto_block_threshold: int = 50
     max_reports_per_device_per_day: int = 3
+
+    sentry_dsn: str = ""
+    sentry_traces_sample_rate: float = 1.0
 
 
 @lru_cache

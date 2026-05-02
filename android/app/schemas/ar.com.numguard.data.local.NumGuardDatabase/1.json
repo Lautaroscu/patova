@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "e61a7f50f299b3fa62aad7f4681b3ef7",
+    "entities": [
+      {
+        "tableName": "cached_validations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`number_hash` TEXT NOT NULL, `number_e164_masked` TEXT, `verdict` TEXT NOT NULL, `spam_score` INTEGER NOT NULL, `reason` TEXT, `report_count` INTEGER NOT NULL, `prefix_zone` TEXT, `cached_at_millis` INTEGER NOT NULL, `expires_at_millis` INTEGER NOT NULL, PRIMARY KEY(`number_hash`))",
+        "fields": [
+          {
+            "fieldPath": "numberHash",
+            "columnName": "number_hash",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numberE164Masked",
+            "columnName": "number_e164_masked",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "verdict",
+            "columnName": "verdict",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "spamScore",
+            "columnName": "spam_score",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reason",
+            "columnName": "reason",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "reportCount",
+            "columnName": "report_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prefixZone",
+            "columnName": "prefix_zone",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cachedAtMillis",
+            "columnName": "cached_at_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "expiresAtMillis",
+            "columnName": "expires_at_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "number_hash"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e61a7f50f299b3fa62aad7f4681b3ef7')"
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+# CI reference
+
+Canonical CI workflow: `.github/workflows/ci.yml`
+
+Triggers:
+
+```yaml
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+```
+
+Jobs:
+
+| Job      | Steps                                                                |
+| -------- | -------------------------------------------------------------------- |
+| backend  | setup-python(3.12), pip install, ruff, mypy, pytest (unit+contract)  |
+| android  | setup-java(17), gradle setup-gradle, testDebugUnitTest, assembleDebug |
+| docker   | docker build backend image (needs backend)                           |
+
+Cache:
+
+- Python: `actions/setup-python@v5` con `cache: pip` via `pyproject.toml`.
+- Gradle: `gradle/actions/setup-gradle@v4` maneja cache automaticamente.
+
+Artifacts:
+
+- APK debug: `android/app/build/outputs/apk/debug/`
+
+No se ejecuta deploy automatico. Para activar deploy a EC2 agregar un job con `needs: [backend, android, docker]` que copie imagen y ejecute compose en el servidor.

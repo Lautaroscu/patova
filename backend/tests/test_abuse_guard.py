@@ -10,6 +10,8 @@ from numguard.services.abuse_guard import (
     record_report,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestCheckReportQuota:
     @pytest.mark.asyncio
