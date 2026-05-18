@@ -11,7 +11,7 @@ object VerdictDecision {
                 builder.setDisallowCall(true)
                 builder.setRejectCall(true)
                 builder.setSkipCallLog(false)
-                builder.setSkipNotification(false)
+                builder.setSkipNotification(true)
             }
             else -> {
                 builder.setDisallowCall(false)

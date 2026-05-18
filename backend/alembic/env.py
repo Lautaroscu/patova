@@ -2,16 +2,20 @@ import asyncio
 from logging.config import fileConfig
 
 from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 import numguard.models.area_prefix  # noqa: F401
 import numguard.models.feedback_event  # noqa: F401
 import numguard.models.phone_number  # noqa: F401
 import numguard.models.report  # noqa: F401
 from alembic import context
+from numguard.core.config import get_settings
 from numguard.db.base import Base
 
 config = context.config
+settings = get_settings()
+config.set_main_option("sqlalchemy.url", settings.database_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
@@ -37,9 +41,8 @@ def do_run_migrations(connection):
 
 
 async def run_async_migrations() -> None:
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_async_engine(
+        settings.database_url,
         poolclass=pool.NullPool,
     )
     async with connectable.connect() as connection:

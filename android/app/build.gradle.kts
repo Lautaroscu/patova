@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "ar.com.numguard.app"
+    namespace = "ar.com.numguard"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "ar.com.numguard.app"
+        applicationId = "ar.com.numguard"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
@@ -22,13 +22,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+        buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8000/\"")
         buildConfigField("String", "API_KEY", "\"dev-dummy-key\"")
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8000/\"")
         }
         release {
             isMinifyEnabled = false
@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
 
     implementation(libs.hilt.android)

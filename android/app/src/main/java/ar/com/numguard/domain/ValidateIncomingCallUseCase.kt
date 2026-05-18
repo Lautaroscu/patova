@@ -1,5 +1,6 @@
 package ar.com.numguard.domain
 
+import android.util.Log
 import ar.com.numguard.data.api.NumGuardApi
 import ar.com.numguard.data.api.ValidateRequest
 import ar.com.numguard.data.local.CachedValidationDao
@@ -22,11 +23,13 @@ class ValidateIncomingCallUseCase @Inject constructor(
     private val callEventDao: CallEventDao
 ) {
     suspend fun decide(e164: String): String = withContext(Dispatchers.IO) {
+        Log.d("NumGuard", "ValidateUseCase: Iniciando validación para $e164")
         val hash = PhoneHashing.sha256(e164)
         val cached = dao.getByHash(hash)
         val now = System.currentTimeMillis()
 
         if (cached != null && cached.expiresAtMillis > now) {
+            Log.d("NumGuard", "ValidateUseCase: Cache HIT para $e164. Veredicto: ${cached.verdict}")
             saveCallEvent(
                 hash = hash,
                 masked = cached.numberE164Masked ?: VerdictDecision.maskE164(e164),
@@ -38,6 +41,8 @@ class ValidateIncomingCallUseCase @Inject constructor(
             return@withContext cached.verdict
         }
 
+        Log.d("NumGuard", "ValidateUseCase: Cache MISS para $e164. Consultando API...")
+
         try {
             withTimeout(4500L) {
                 val response = api.validate(
@@ -48,6 +53,7 @@ class ValidateIncomingCallUseCase @Inject constructor(
                     )
                 )
 
+                Log.d("NumGuard", "ValidateUseCase: API respondió con veredicto: ${response.verdict}")
                 val masked = VerdictDecision.maskE164(e164)
                 val ttl = VerdictDecision.ttlMillisForVerdict(response.verdict)
                 dao.insert(
@@ -75,14 +81,15 @@ class ValidateIncomingCallUseCase @Inject constructor(
 
                 response.verdict
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("NumGuard", "ValidateUseCase: Fallo la validación de $e164: ${e.message}", e)
             val masked = VerdictDecision.maskE164(e164)
             saveCallEvent(
                 hash = hash,
                 masked = masked,
                 verdict = "UNKNOWN",
                 spamScore = null,
-                reason = "Error de red o timeout",
+                reason = "Error: ${e.message}",
                 actionTaken = "FAILED_OPEN"
             )
             "ALLOW"
@@ -97,6 +104,7 @@ class ValidateIncomingCallUseCase @Inject constructor(
         reason: String?,
         actionTaken: String
     ) {
+        Log.d("NumGuard", "ValidateUseCase: Guardando evento de llamada. Acción: $actionTaken")
         callEventDao.insert(
             CallEventEntity(
                 id = UUID.randomUUID().toString(),

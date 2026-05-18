@@ -66,6 +66,11 @@ def _decide_verdict(
         return Verdict.INVALID_PREFIX, "INVALID_PREFIX"
 
     if lookup.phone is None:
+        # 3. Cloud Check a ENACOM (Simulado por ahora)
+        # Si el número no está en nuestra DB, le preguntamos a ENACOM
+        enacom_spam = _mock_enacom_check(lookup.normalized)
+        if enacom_spam:
+            return Verdict.BLOCK, "ENACOM_SPAM_REGISTRY"
         return Verdict.UNKNOWN, "UNKNOWN_NUMBER"
 
     phone = lookup.phone
@@ -126,3 +131,13 @@ async def validate_number(
         await set_cached_result(redis_client, lookup.normalized, cache_data, verdict.value)
 
     return response
+
+def _mock_enacom_check(number: str) -> bool:
+    """
+    Simulación de consulta a ENACOM en tiempo real.
+    Devuelve True si ENACOM reporta que es spam.
+    """
+    # Ejemplo: Si el número termina en 9999, simulamos que es spam de ENACOM
+    if number and number.endswith("9999"):
+        return True
+    return False

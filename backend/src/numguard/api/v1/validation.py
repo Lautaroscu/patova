@@ -51,6 +51,7 @@ async def validate(
             validate_cache_hits_total.inc()
             validate_requests_total.labels(verdict=verdict_value).inc()
             validate_latency_seconds.observe(latency / 1000)
+            print(f">>> VALIDACION (CACHED): Numero={normalized} | Veredicto={verdict_value} | Motivo={cached.get('reason')}")
             return ValidateResponse(
                 verdict=Verdict(verdict_value),
                 spam_score=cached.get("spam_score", 0),
@@ -64,6 +65,7 @@ async def validate(
             )
 
     response = await validate_number(session, redis_client, normalized)
+    print(f">>> VALIDACION: Numero={normalized} | Veredicto={response.verdict.value} | Motivo={response.reason}")
     latency = response.latency_ms
     validate_requests_total.labels(verdict=response.verdict.value).inc()
     validate_latency_seconds.observe(latency / 1000)

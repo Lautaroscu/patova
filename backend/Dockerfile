@@ -11,10 +11,12 @@ RUN python -m venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 
 COPY pyproject.toml .
+COPY src/ src/
 RUN pip install --no-cache-dir -e ".[dev]"
 
 FROM python:3.12-slim AS runtime
 
+ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:$PATH"
 
@@ -37,4 +39,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
 
-CMD ["gunicorn", "numguard.main:create_app", "--factory", "-k", "uvicorn.workers.UvicornWorker", "-w", "2", "-b", "0.0.0.0:8000"]
+CMD ["uvicorn", "numguard.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]

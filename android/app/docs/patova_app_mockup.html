@@ -1,0 +1,242 @@
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans,sans-serif)}
+  .stage{background:#f0f2f7;border-radius:16px;padding:2rem;display:flex;gap:2rem;justify-content:center;flex-wrap:wrap}
+  .phone{width:200px;background:#0A0F1E;border-radius:36px;padding:3px;flex-shrink:0;border:2px solid #1c2a44}
+  .phone-inner{background:#0A0F1E;border-radius:33px;overflow:hidden;min-height:420px;display:flex;flex-direction:column}
+  .notch{background:#0A0F1E;height:28px;display:flex;align-items:center;justify-content:center;position:relative}
+  .notch-pill{width:60px;height:10px;background:#050910;border-radius:8px}
+  .screen{flex:1;display:flex;flex-direction:column;padding:0}
+  .label-tag{font-size:10px;font-weight:500;letter-spacing:0.08em;color:#5a7090;text-transform:uppercase;text-align:center;margin-bottom:8px}
+
+  /* Screen 1 - Dashboard */
+  .s1-header{background:#0A0F1E;padding:12px 14px 8px;border-bottom:0.5px solid #1c2a44}
+  .s1-logo{font-size:13px;font-weight:500;letter-spacing:0.12em;color:#E8F0FF}
+  .s1-sub{font-size:9px;color:#4A6080;margin-top:1px}
+  .s1-hero{background:#0d1628;padding:14px;text-align:center;border-bottom:0.5px solid #1a2840}
+  .s1-shield{width:52px;height:52px;margin:0 auto 8px;position:relative}
+  .s1-count{font-size:26px;font-weight:500;color:#E8F0FF;line-height:1}
+  .s1-countlabel{font-size:9px;color:#4A6080;margin-top:3px}
+  .s1-status{display:inline-flex;align-items:center;gap:4px;background:#1D9E7520;border-radius:10px;padding:3px 8px;margin-top:6px}
+  .s1-dot{width:5px;height:5px;border-radius:50%;background:#1D9E75}
+  .s1-stlabel{font-size:8px;color:#1D9E75;font-weight:500}
+  .s1-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:0.5px solid #1c2a44}
+  .s1-stat{padding:8px 4px;text-align:center;border-right:0.5px solid #1c2a44}
+  .s1-stat:last-child{border-right:none}
+  .s1-statval{font-size:14px;font-weight:500;color:#E8F0FF}
+  .s1-statlabel{font-size:7px;color:#4A6080;margin-top:2px}
+  .s1-recent{padding:8px 12px}
+  .s1-rtitle{font-size:9px;color:#4A6080;font-weight:500;letter-spacing:0.06em;margin-bottom:6px}
+  .s1-call{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid #131f30}
+  .s1-call:last-child{border-bottom:none}
+  .s1-badge{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .s1-badge.block{background:#E24B4A22}
+  .s1-badge.ok{background:#1D9E7522}
+  .s1-badge.warn{background:#EF9F2722}
+  .s1-callinfo{flex:1;min-width:0}
+  .s1-callnum{font-size:9px;color:#8BA8CC;font-family:var(--font-mono,monospace)}
+  .s1-callstatus{font-size:8px;margin-top:1px}
+  .s1-callstatus.block{color:#E24B4A}
+  .s1-callstatus.ok{color:#1D9E75}
+  .s1-callstatus.warn{color:#EF9F27}
+  .s1-calltime{font-size:7px;color:#3A5070}
+  .s1-nav{background:#080d1a;display:flex;padding:8px 0 4px;border-top:0.5px solid #1c2a44}
+  .s1-navitem{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .s1-navlabel{font-size:7px;color:#3A5070}
+  .s1-navlabel.active{color:#4A8CFF}
+
+  /* Screen 2 - Blocked call */
+  .s2-bg{background:#0d0610;flex:1;display:flex;flex-direction:column;align-items:center;padding:16px 12px;text-align:center}
+  .s2-warning{width:60px;height:60px;margin:8px auto 10px}
+  .s2-label{font-size:8px;font-weight:500;letter-spacing:0.1em;color:#E24B4A;margin-bottom:6px}
+  .s2-num{font-size:16px;font-weight:500;color:#E8F0FF;font-family:var(--font-mono,monospace)}
+  .s2-reason{font-size:8px;color:#5A3040;background:#E24B4A15;border-radius:8px;padding:4px 10px;margin:6px 0}
+  .s2-divider{width:100%;height:0.5px;background:#1a1228;margin:8px 0}
+  .s2-score-label{font-size:8px;color:#5A3060;margin-bottom:4px}
+  .s2-score-bar{width:100%;height:6px;background:#1a1228;border-radius:3px;overflow:hidden}
+  .s2-score-fill{height:100%;width:91%;background:#E24B4A;border-radius:3px}
+  .s2-score-val{font-size:10px;color:#E24B4A;font-weight:500;margin-top:3px}
+  .s2-btns{width:100%;margin-top:auto;display:flex;flex-direction:column;gap:6px}
+  .s2-btn-block{background:#E24B4A;border:none;border-radius:10px;padding:8px;font-size:9px;font-weight:500;color:white;width:100%}
+  .s2-btn-allow{background:transparent;border:0.5px solid #2a1a28;border-radius:10px;padding:6px;font-size:8px;color:#5A3060;width:100%}
+
+  /* Screen 3 - Premium conversion */
+  .s3-bg{background:#0d1628;flex:1;display:flex;flex-direction:column;padding:14px;text-align:center}
+  .s3-week{font-size:9px;color:#4A6080;font-weight:500;letter-spacing:0.06em;margin-bottom:10px}
+  .s3-bignum{font-size:36px;font-weight:500;color:#4A8CFF;line-height:1}
+  .s3-bignumlabel{font-size:9px;color:#4A6080;margin-top:3px;margin-bottom:12px}
+  .s3-breakdown{background:#080d1a;border-radius:10px;padding:8px;margin-bottom:10px;text-align:left}
+  .s3-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:0.5px solid #1a2840}
+  .s3-row:last-child{border-bottom:none}
+  .s3-rowlabel{font-size:8px;color:#4A6080}
+  .s3-rowval{font-size:8px;font-weight:500;color:#E8F0FF}
+  .s3-cta{background:#4A8CFF;border:none;border-radius:10px;padding:10px;font-size:10px;font-weight:500;color:white;width:100%;margin-bottom:6px}
+  .s3-price{font-size:8px;color:#4A6080}
+  .s3-mp{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:6px}
+  .s3-mplabel{font-size:7px;color:#3A5070}
+  .mp-logo{display:inline-flex;align-items:center;gap:2px}
+  .mp-logo span{font-size:7px;font-weight:500;color:#009EE3}
+
+  .screen-nav{display:flex;justify-content:center;gap:8px;margin-top:1rem}
+  .snav-btn{background:none;border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:var(--color-text-secondary)}
+  .snav-btn.active{border-color:#4A8CFF;color:#4A8CFF;font-weight:500}
+</style>
+
+<div style="padding:0.5rem 0 1.5rem">
+  <div style="font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:1rem">Mockup de app · PATOVA</div>
+
+  <div class="stage" id="stage">
+
+    <!-- PHONE 1: Dashboard -->
+    <div>
+      <div class="label-tag">Dashboard principal</div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="notch"><div class="notch-pill"></div></div>
+          <div class="screen">
+            <div class="s1-header">
+              <div class="s1-logo">PATOVA</div>
+              <div class="s1-sub">Protección activa</div>
+            </div>
+            <div class="s1-hero">
+              <div class="s1-shield">
+                <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+                  <path d="M26 4L8 13V26C8 37.5 16 46.5 26 49C36 46.5 44 37.5 44 26V13L26 4Z" fill="#1B2A4A" stroke="#4A8CFF" stroke-width="1"/>
+                   <circle cx="26" cy="27" r="10" stroke="#4A8CFF" stroke-width="1" opacity="0.5"/>
+                  <path d="M20 27L24 31.5L33 23" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="s1-count">47</div>
+              <div class="s1-countlabel">llamadas bloqueadas esta semana</div>
+              <div class="s1-status"><div class="s1-dot"></div><div class="s1-stlabel">Protección activa</div></div>
+            </div>
+            <div class="s1-stats">
+              <div class="s1-stat"><div class="s1-statval" style="color:#E24B4A">47</div><div class="s1-statlabel">Bloqueadas</div></div>
+              <div class="s1-stat"><div class="s1-statval" style="color:#1D9E75">12</div><div class="s1-statlabel">Verificadas</div></div>
+              <div class="s1-stat"><div class="s1-statval" style="color:#EF9F27">3</div><div class="s1-statlabel">Sospechosas</div></div>
+            </div>
+            <div class="s1-recent">
+              <div class="s1-rtitle">Últimas llamadas</div>
+              <div class="s1-call">
+                <div class="s1-badge block">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="#E24B4A" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <div class="s1-callinfo"><div class="s1-callnum">+54 11 4XXX-XXXX</div><div class="s1-callstatus block">Bloqueado · Bot wangiri</div></div>
+                <div class="s1-calltime">hace 2m</div>
+              </div>
+              <div class="s1-call">
+                <div class="s1-badge ok">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L5 9.5L10 3" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="s1-callinfo"><div class="s1-callnum">+54 11 5YYY-YYYY</div><div class="s1-callstatus ok">Verificado · ENACOM</div></div>
+                <div class="s1-calltime">hace 1h</div>
+              </div>
+              <div class="s1-call">
+                <div class="s1-badge warn">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 3V6.5M6 8.5V9" stroke="#EF9F27" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="6" r="5" stroke="#EF9F27" stroke-width="1"/></svg>
+                </div>
+                <div class="s1-callinfo"><div class="s1-callnum">+54 351 4ZZZ-ZZZ</div><div class="s1-callstatus warn">Sospechoso · Score 67</div></div>
+                <div class="s1-calltime">hace 3h</div>
+              </div>
+            </div>
+            <div class="s1-nav">
+              <div class="s1-navitem">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2L2 6V13H5.5V9H8.5V13H12V6L7 2Z" fill="#4A8CFF"/></svg>
+                <div class="s1-navlabel active">Inicio</div>
+              </div>
+              <div class="s1-navitem">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#3A5070" stroke-width="1"/><path d="M4.5 7L6.5 9L9.5 5" stroke="#3A5070" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div class="s1-navlabel">Historial</div>
+              </div>
+              <div class="s1-navitem">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5" stroke="#3A5070" stroke-width="1"/><circle cx="7" cy="7" r="2" stroke="#3A5070" stroke-width="1"/></svg>
+                <div class="s1-navlabel">Red</div>
+              </div>
+              <div class="s1-navitem">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="5" r="2.5" stroke="#3A5070" stroke-width="1"/><path d="M2 13C2 10.2 4.2 8 7 8C9.8 8 12 10.2 12 13" stroke="#3A5070" stroke-width="1" stroke-linecap="round"/></svg>
+                <div class="s1-navlabel">Perfil</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 2: Blocked call screen -->
+    <div>
+      <div class="label-tag">Llamada bloqueada</div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="notch"><div class="notch-pill"></div></div>
+          <div class="screen">
+            <div class="s2-bg">
+              <div class="s2-label">Llamada bloqueada</div>
+              <div class="s2-warning">
+                <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                  <path d="M30 6L8 18V30C8 43 18 53 30 56C42 53 52 43 52 30V18L30 6Z" fill="#2a0814" stroke="#E24B4A" stroke-width="1.5"/>
+                  <path d="M22 22L38 38M38 22L22 38" stroke="#E24B4A" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="s2-num">+54 11 4XXX-XXXX</div>
+              <div class="s2-reason">Bot detectado · Base de spam PATOVA</div>
+              <div class="s2-divider"></div>
+              <div style="width:100%;text-align:left">
+                <div class="s2-score-label">Score de riesgo</div>
+                <div class="s2-score-bar"><div class="s2-score-fill"></div></div>
+                <div class="s2-score-val">91 / 100</div>
+              </div>
+              <div style="width:100%;margin-top:8px;text-align:left">
+                <div style="font-size:8px;color:#3A2030;margin-bottom:4px">Reportado por</div>
+                <div style="font-size:9px;color:#6A4060">2.647 usuarios PATOVA</div>
+              </div>
+              <div class="s2-btns">
+                <button class="s2-btn-block">Confirmar bloqueo</button>
+                <button class="s2-btn-allow">Permitir de todas formas</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHONE 3: Premium conversion -->
+    <div>
+      <div class="label-tag">Conversión premium</div>
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="notch"><div class="notch-pill"></div></div>
+          <div class="screen">
+            <div class="s3-bg">
+              <div class="s3-week">Tu primera semana con PATOVA</div>
+              <div class="s3-bignum">47</div>
+              <div class="s3-bignumlabel">llamadas que nunca te molestaron</div>
+              <div class="s3-breakdown">
+                <div class="s3-row"><div class="s3-rowlabel">País extranjero</div><div class="s3-rowval" style="color:#E24B4A">23</div></div>
+                <div class="s3-row"><div class="s3-rowlabel">Vishing detectado</div><div class="s3-rowval" style="color:#E24B4A">11</div></div>
+                <div class="s3-row"><div class="s3-rowlabel">Reiteradas no atendidas</div><div class="s3-rowval" style="color:#E24B4A">5</div></div>
+                <div class="s3-row"><div class="s3-rowlabel">Reconocimiento de firma</div><div class="s3-rowval" style="color:#E24B4A">4</div></div>
+              </div>
+              <div style="font-size:9px;color:#4A6080;margin-bottom:10px;text-align:center">Tu prueba gratuita termina en 24 hs.</div>
+              <button class="s3-cta">Activar PATOVA Premium</button>
+              <div class="s3-price">$1.000 / mes · 2 meses gratis si pagás anual</div>
+              <div class="s3-mp">
+                <div class="s3-mplabel">Pagá con</div>
+                <div class="mp-logo"><span>Mercado</span><span style="color:#00b1ea">Pago</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="margin-top:1.25rem;padding:1rem 1.25rem;background:var(--color-background-secondary);border-radius:12px">
+    <div style="font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px">Flujo de 3 pantallas clave</div>
+    <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">
+      1 · El dashboard muestra el escudo activo y el contador de bloqueos — el número es el argumento de venta.
+      2 · La pantalla de llamada bloqueada aparece antes de que el teléfono suene — el score de riesgo y los reportes de otros usuarios validan la decisión.
+      3 · Al día 7, la pantalla de conversión muestra el breakdown exacto de qué se bloqueó. Con 47 amenazas reales en pantalla, pagar $1.000 es trivial.
+    </div>
+  </div>
+</div>

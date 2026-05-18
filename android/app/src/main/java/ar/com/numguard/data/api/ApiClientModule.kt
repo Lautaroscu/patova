@@ -2,7 +2,7 @@ package ar.com.numguard.data.api
 
 import android.content.Context
 import androidx.work.WorkManager
-import ar.com.numguard.app.BuildConfig
+import ar.com.numguard.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,17 +48,17 @@ object ApiClientModule {
     @Singleton
     fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient =
         OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .connectTimeout(300, TimeUnit.MILLISECONDS)
-            .readTimeout(500, TimeUnit.MILLISECONDS)
-            .callTimeout(4500, TimeUnit.MILLISECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("X-API-Key", BuildConfig.API_KEY)
+                    .addHeader("X-NumGuard-Key", BuildConfig.API_KEY)
                     .addHeader("Accept", "application/json")
                     .build()
                 chain.proceed(request)
             }
+            .addInterceptor(loggingInterceptor)
             .build()
 
     @Provides
