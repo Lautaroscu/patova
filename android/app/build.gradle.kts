@@ -104,6 +104,8 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
+    implementation(libs.security.crypto)
+
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
 }

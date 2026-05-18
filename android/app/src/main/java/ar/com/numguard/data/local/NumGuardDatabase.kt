@@ -4,14 +4,23 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import ar.com.numguard.data.local.daos.BlacklistDao
+import ar.com.numguard.data.local.daos.LocalPreferencesDao
+import ar.com.numguard.data.local.daos.WhitelistDao
+import ar.com.numguard.data.local.entities.BlacklistEntity
+import ar.com.numguard.data.local.entities.LocalPreferencesEntity
+import ar.com.numguard.data.local.entities.WhitelistEntity
 
 @Database(
     entities = [
         CachedValidationEntity::class,
         CallEventEntity::class,
-        PendingReportEntity::class
+        PendingReportEntity::class,
+        LocalPreferencesEntity::class,
+        WhitelistEntity::class,
+        BlacklistEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class NumGuardDatabase : RoomDatabase() {
@@ -19,6 +28,9 @@ abstract class NumGuardDatabase : RoomDatabase() {
     abstract fun cachedValidationDao(): CachedValidationDao
     abstract fun callEventDao(): CallEventDao
     abstract fun pendingReportDao(): PendingReportDao
+    abstract fun localPreferencesDao(): LocalPreferencesDao
+    abstract fun whitelistDao(): WhitelistDao
+    abstract fun blacklistDao(): BlacklistDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -48,6 +60,35 @@ abstract class NumGuardDatabase : RoomDatabase() {
                         call_event_id TEXT NOT NULL,
                         created_at_millis INTEGER NOT NULL,
                         retry_count INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS local_preferences (
+                        id INTEGER PRIMARY KEY NOT NULL,
+                        strict_mode INTEGER NOT NULL DEFAULT 0,
+                        block_unknown INTEGER NOT NULL DEFAULT 0,
+                        spam_threshold REAL NOT NULL DEFAULT 0.75,
+                        sync_enabled INTEGER NOT NULL DEFAULT 1,
+                        updated_at INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS whitelist (
+                        phone_hash TEXT PRIMARY KEY NOT NULL,
+                        label TEXT NOT NULL,
+                        added_at INTEGER NOT NULL
+                    )
+                """.trimIndent())
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS blacklist (
+                        phone_hash TEXT PRIMARY KEY NOT NULL,
+                        reason TEXT NOT NULL,
+                        added_at INTEGER NOT NULL
                     )
                 """.trimIndent())
             }

@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -39,11 +39,11 @@ import ar.com.numguard.ui.BlockedCallScreen
 import ar.com.numguard.ui.DashboardScreen
 import ar.com.numguard.ui.NetworkScreen
 import ar.com.numguard.ui.PremiumScreen
-import ar.com.numguard.ui.ProfileScreen
 import ar.com.numguard.ui.disclosure.DisclosureDeniedScreen
 import ar.com.numguard.ui.disclosure.DisclosureScreen
 import ar.com.numguard.ui.disclosure.RequestingPermissionsScreen
 import ar.com.numguard.ui.history.HistoryScreen
+import ar.com.numguard.ui.settings.SettingsScreen
 import ar.com.numguard.ui.theme.Navy850
 import ar.com.numguard.ui.theme.NumGuardTheme
 import ar.com.numguard.ui.theme.PremiumBlue
@@ -61,7 +61,7 @@ private val bottomNavItems = listOf(
     BottomNavItem("dashboard", "Inicio", Icons.Rounded.Home),
     BottomNavItem("history", "Historial", Icons.Rounded.History),
     BottomNavItem("network", "Red", Icons.Rounded.Language),
-    BottomNavItem("profile", "Perfil", Icons.Rounded.Person)
+    BottomNavItem("settings", "Config", Icons.Rounded.Settings)
 )
 
 private val tabRoutes = bottomNavItems.map { it.route }
@@ -210,8 +210,8 @@ class MainActivity : ComponentActivity() {
                 composable("network") {
                     NetworkScreen()
                 }
-                composable("profile") {
-                    ProfileScreen()
+                composable("settings") {
+                    SettingsScreen()
                 }
                 composable("blocked_call") {
                     BlockedCallScreen(
