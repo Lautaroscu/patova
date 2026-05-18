@@ -5,6 +5,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface NumGuardApi {
 
@@ -25,4 +26,10 @@ interface NumGuardApi {
         @Path("device_id") deviceId: String,
         @Body request: DeviceConfigRequest
     ): DeviceConfigResponse
+
+    @POST("v1/payments/create-preference")
+    suspend fun createPreference(@Body request: CreatePreferenceRequest): CreatePreferenceResponse
+
+    @GET("v1/subscriptions/me")
+    suspend fun getSubscriptionMe(@Query("user_id") userId: String): SubscriptionMeResponse
 }
