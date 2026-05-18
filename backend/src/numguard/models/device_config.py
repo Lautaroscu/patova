@@ -1,5 +1,7 @@
 from sqlalchemy import JSON, Boolean, Column, String
+
 from numguard.models.base import Base
+
 
 class DeviceConfig(Base):
     __tablename__ = "device_configs"

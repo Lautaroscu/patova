@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class DeviceConfigSchema(BaseModel):
     block_non_contacts: bool = False
     allowed_prefixes: list[str] = Field(default_factory=list)
