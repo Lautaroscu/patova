@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -21,8 +21,15 @@ def get_limiter() -> Limiter:
     return _limiter_instance
 
 
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> None:
+    from numguard.core.metrics import rate_limit_hits_total
+
+    rate_limit_hits_total.labels(endpoint=request.url.path).inc()
+    return await _rate_limit_exceeded_handler(request, exc)
+
+
 def setup_rate_limit(app: FastAPI) -> None:
     limiter = get_limiter()
     app.state.limiter = limiter
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
