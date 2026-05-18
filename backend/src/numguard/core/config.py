@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     auto_block_threshold: int = 50
     max_reports_per_device_per_day: int = 3
 
+    spam_reputation_cache_ttl: int = 3600
+    cache_invalidation_report_threshold: int = 5
+    rate_limit_redis_window_sec: int = 60
+
     sentry_dsn: str = ""
     sentry_traces_sample_rate: float = 1.0
 
