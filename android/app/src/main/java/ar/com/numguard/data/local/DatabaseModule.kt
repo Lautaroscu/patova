@@ -2,6 +2,9 @@ package ar.com.numguard.data.local
 
 import android.content.Context
 import androidx.room.Room
+import ar.com.numguard.data.local.daos.BlacklistDao
+import ar.com.numguard.data.local.daos.LocalPreferencesDao
+import ar.com.numguard.data.local.daos.WhitelistDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -21,7 +24,7 @@ object DatabaseModule {
             NumGuardDatabase::class.java,
             "numguard.db"
         )
-            .addMigrations(NumGuardDatabase.MIGRATION_1_2)
+            .addMigrations(NumGuardDatabase.MIGRATION_1_2, NumGuardDatabase.MIGRATION_2_3)
             .build()
 
     @Provides
@@ -38,4 +41,19 @@ object DatabaseModule {
     @Singleton
     fun providePendingReportDao(db: NumGuardDatabase): PendingReportDao =
         db.pendingReportDao()
+
+    @Provides
+    @Singleton
+    fun provideLocalPreferencesDao(db: NumGuardDatabase): LocalPreferencesDao =
+        db.localPreferencesDao()
+
+    @Provides
+    @Singleton
+    fun provideWhitelistDao(db: NumGuardDatabase): WhitelistDao =
+        db.whitelistDao()
+
+    @Provides
+    @Singleton
+    fun provideBlacklistDao(db: NumGuardDatabase): BlacklistDao =
+        db.blacklistDao()
 }

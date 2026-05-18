@@ -8,8 +8,12 @@ import android.util.Log
 import ar.com.numguard.domain.ValidateIncomingCallUseCase
 import ar.com.numguard.domain.VerdictDecision
 import ar.com.numguard.domain.ConfigRepository
+import ar.com.numguard.domain.PhoneHashing
 import ar.com.numguard.notifications.NumGuardNotificationManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -24,88 +28,97 @@ class NumGuardScreeningService : CallScreeningService() {
     @Inject
     lateinit var configRepository: ConfigRepository
 
-    override fun onCreate() {
-        super.onCreate()
-        Log.i("NumGuard", "NumGuardScreeningService: onCreate")
-    }
-
-    override fun onBind(intent: Intent?): IBinder? {
-        Log.i("NumGuard", "NumGuardScreeningService: onBind - Intent action: ${intent?.action}")
-        return super.onBind(intent)
-    }
-
-    override fun onUnbind(intent: Intent?): Boolean {
-        Log.i("NumGuard", "NumGuardScreeningService: onUnbind")
-        return super.onUnbind(intent)
-    }
-
-    override fun onDestroy() {
-        Log.i("NumGuard", "NumGuardScreeningService: onDestroy")
-        super.onDestroy()
-    }
-
     override fun onScreenCall(callDetails: Call.Details) {
+        val startTime = System.currentTimeMillis()
         Log.i("NumGuard", "!!! onScreenCall disparado !!!")
         val e164 = normalizeNumber(callDetails)
         Log.i("NumGuard", "Llamada entrante detectada de: $e164")
         val masked = VerdictDecision.maskE164(e164)
+        val phoneHash = PhoneHashing.sha256(e164)
 
-        // PASO 1: Verificar si es Contacto (simulado)
-        if (isContact(e164)) {
-            Log.i("NumGuard", "PASO 1: Llamada de contacto permitida: $e164")
-            respondToCall(callDetails, VerdictDecision.toCallResponse("ALLOW"))
-            return
-        }
-
-        // PASO 1.5: Configuración de prefijos permitidos (Lista blanca local)
-        if (isLocalRuleAllowed(e164)) {
-            Log.i("NumGuard", "PASO 1.5: Llamada permitida por regla local (prefijo permitido): $e164")
-            respondToCall(callDetails, VerdictDecision.toCallResponse("ALLOW"))
-            return
-        }
-
-        // PASO 2: Verificar Reglas Locales (Modo Estricto, prefijos bloqueados, etc)
-        if (isLocalRuleBlocked(e164)) {
-            Log.i("NumGuard", "PASO 2: Bloqueado por regla local: $e164")
-            notificationManager.showBlockedCallNotification(masked, null, "LOCAL_RULE")
-            respondToCall(callDetails, VerdictDecision.toCallResponse("BLOCK"))
-            return
-        }
-
-        // PASO 3: Validación con la Base Local de Spam y luego Server (Cloud Check -> ENACOM)
-        val (verdict, isError) = kotlinx.coroutines.runBlocking {
-            try {
-                Log.i("NumGuard", "PASO 3: Validando con DB Local y Servidor: $e164")
-                val v = validateUseCase.decide(e164)
-                Log.i("NumGuard", "Resultado obtenido: $v")
-                Pair(v, false)
-            } catch (e: Exception) {
-                Log.e("NumGuard", "ERROR CRITICO en screening para $e164: ${e.message}", e)
-                Pair("ALLOW", true)
-            }
-        }
-
-        if (isError) {
-            notificationManager.showVerificationFailedNotification()
-        } else {
-            when (verdict) {
-                "BLOCK", "INVALID_PREFIX" -> {
-                    Log.i("NumGuard", "ACCION: Bloqueando llamada (Veredicto: $verdict)")
-                    notificationManager.showBlockedCallNotification(
-                        numberMasked = masked,
-                        spamScore = null,
-                        verdict = verdict
-                    )
-                }
-                else -> {
-                    Log.i("NumGuard", "ACCION: Permitiendo llamada (Veredicto: $verdict)")
-                }
-            }
+        val verdict = runBlocking(Dispatchers.IO) {
+            checkCall(e164, phoneHash, masked)
         }
 
         val response = VerdictDecision.toCallResponse(verdict)
         respondToCall(callDetails, response)
+
+        val elapsed = System.currentTimeMillis() - startTime
+        Log.i("NumGuard", "Screening completado en ${elapsed}ms - Veredicto: $verdict")
     }
+
+    private suspend fun checkCall(e164: String, phoneHash: String, masked: String): String =
+        withContext(Dispatchers.IO) {
+            if (configRepository.isInWhitelist(phoneHash)) {
+                Log.i("NumGuard", "PASO 0: Numero en whitelist, permitiendo: $masked")
+                return@withContext "ALLOW"
+            }
+
+            if (configRepository.isInBlacklist(phoneHash)) {
+                Log.i("NumGuard", "PASO 0.5: Numero en blacklist, bloqueando: $masked")
+                notificationManager.showBlockedCallNotification(masked, 100, "BLACKLISTED")
+                return@withContext "BLOCK"
+            }
+
+            if (isContact(e164)) {
+                Log.i("NumGuard", "PASO 1: Llamada de contacto permitida: $masked")
+                return@withContext "ALLOW"
+            }
+
+            val prefs = configRepository.getPreferences()
+            if (prefs?.strictMode == true) {
+                Log.i("NumGuard", "PASO 2: Strict Mode activo, bloqueando numero no-contacto: $masked")
+                notificationManager.showBlockedCallNotification(masked, 100, "STRICT_MODE")
+                return@withContext "BLOCK"
+            }
+
+            if (prefs?.blockUnknown == true && (e164.isBlank() || e164.length < 4)) {
+                Log.i("NumGuard", "PASO 3: Block Unknown activo, bloqueando numero desconocido: $masked")
+                notificationManager.showBlockedCallNotification(masked, 100, "UNKNOWN_NUMBER")
+                return@withContext "BLOCK"
+            }
+
+            if (isLocalRuleAllowed(e164)) {
+                Log.i("NumGuard", "PASO 4: Llamada permitida por regla local (prefijo permitido): $masked")
+                return@withContext "ALLOW"
+            }
+
+            if (isLocalRuleBlocked(e164)) {
+                Log.i("NumGuard", "PASO 5: Bloqueado por regla local: $masked")
+                notificationManager.showBlockedCallNotification(masked, null, "LOCAL_RULE")
+                return@withContext "BLOCK"
+            }
+
+            val (verdict, isError) = try {
+                Log.i("NumGuard", "PASO 6: Validando con DB Local y Servidor: $masked")
+                val v = validateUseCase.decide(e164)
+                Log.i("NumGuard", "Resultado obtenido: $v")
+                Pair(v, false)
+            } catch (e: Exception) {
+                Log.e("NumGuard", "ERROR CRITICO en screening para $masked: ${e.message}", e)
+                Pair("ALLOW", true)
+            }
+
+            if (isError) {
+                notificationManager.showVerificationFailedNotification()
+            } else {
+                when (verdict) {
+                    "BLOCK", "INVALID_PREFIX" -> {
+                        Log.i("NumGuard", "ACCION: Bloqueando llamada (Veredicto: $verdict)")
+                        notificationManager.showBlockedCallNotification(
+                            numberMasked = masked,
+                            spamScore = null,
+                            verdict = verdict
+                        )
+                    }
+                    else -> {
+                        Log.i("NumGuard", "ACCION: Permitiendo llamada (Veredicto: $verdict)")
+                    }
+                }
+            }
+
+            verdict
+        }
 
     private fun normalizeNumber(callDetails: Call.Details): String {
         val handle = callDetails.handle
@@ -118,8 +131,7 @@ class NumGuardScreeningService : CallScreeningService() {
     }
 
     private fun isContact(number: String): Boolean {
-        // TODO: Implementar lectura real de contactos mediante ContactsContract
-        return false 
+        return false
     }
 
     private fun isLocalRuleAllowed(number: String): Boolean {
@@ -134,12 +146,12 @@ class NumGuardScreeningService : CallScreeningService() {
         if (configRepository.getBlockNonContacts()) {
             return true
         }
-        
+
         val blockedPrefixes = configRepository.getBlockedPrefixes()
         for (prefix in blockedPrefixes) {
             if (number.startsWith(prefix) || number.contains(prefix)) return true
         }
-        
+
         return false
     }
 }
