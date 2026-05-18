@@ -104,6 +104,10 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
+    implementation(libs.androidx.security.crypto)
+    implementation(libs.androidx.browser)
+    implementation(libs.androidx.datastore.preferences)
+
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.junit)
 }

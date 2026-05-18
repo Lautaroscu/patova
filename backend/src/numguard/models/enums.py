@@ -29,3 +29,15 @@ class FeedbackType(StrEnum):
     WAS_SPAM = "WAS_SPAM"
     CORRECT_BLOCK = "CORRECT_BLOCK"
     CORRECT_ALLOW = "CORRECT_ALLOW"
+
+
+class SubscriptionStatus(StrEnum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    CANCELLED = "CANCELLED"
+    EXPIRED = "EXPIRED"
+
+
+class PlanId(StrEnum):
+    PREMIUM_MONTHLY = "premium_monthly"
+    PREMIUM_ANNUAL = "premium_annual"

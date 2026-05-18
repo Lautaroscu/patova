@@ -36,9 +36,9 @@ import androidx.navigation.compose.rememberNavController
 import ar.com.numguard.ui.BlockedCallScreen
 import ar.com.numguard.ui.DashboardScreen
 import ar.com.numguard.ui.NetworkScreen
-import ar.com.numguard.ui.PremiumScreen
 import ar.com.numguard.ui.ProfileScreen
 import ar.com.numguard.ui.history.HistoryScreen
+import ar.com.numguard.ui.premium.PaywallScreen
 import ar.com.numguard.ui.theme.Navy850
 import ar.com.numguard.ui.theme.NumGuardTheme
 import ar.com.numguard.ui.theme.PremiumBlue
@@ -180,8 +180,8 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 composable("premium") {
-                    PremiumScreen(
-                        onActivate = { navController.popBackStack() }
+                    PaywallScreen(
+                        onBack = { navController.popBackStack() }
                     )
                 }
             }

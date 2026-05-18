@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     sentry_traces_sample_rate: float = 1.0
 
+    mp_access_token: str = "TEST-0000000000000000-000000-00000000000000000000000000000000-000000000"
+    mp_sandbox: bool = True
+    mp_webhook_base_url: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:
