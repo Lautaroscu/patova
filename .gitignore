@@ -26,6 +26,17 @@ local.properties
 .DS_Store
 Thumbs.db
 
+# Android SDK (debe instalarse fuera del repo)
+android-sdk/
+
+# JVM logs
+*.log
+*.hprof
+
+# Python build artifacts
+*.egg-info/
+*.server_pid.txt
+
 # Data local
 scripts/data_samples/raw/
 scripts/data_samples/processed/
