@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -26,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.content.ContextCompat
@@ -38,6 +40,9 @@ import ar.com.numguard.ui.DashboardScreen
 import ar.com.numguard.ui.NetworkScreen
 import ar.com.numguard.ui.PremiumScreen
 import ar.com.numguard.ui.ProfileScreen
+import ar.com.numguard.ui.disclosure.DisclosureDeniedScreen
+import ar.com.numguard.ui.disclosure.DisclosureScreen
+import ar.com.numguard.ui.disclosure.RequestingPermissionsScreen
 import ar.com.numguard.ui.history.HistoryScreen
 import ar.com.numguard.ui.theme.Navy850
 import ar.com.numguard.ui.theme.NumGuardTheme
@@ -61,13 +66,38 @@ private val bottomNavItems = listOf(
 
 private val tabRoutes = bottomNavItems.map { it.route }
 
+private const val PREFS_NAME = "numguard_prefs"
+private const val KEY_DISCLOSURE_ACCEPTED = "disclosure_accepted"
+
+private enum class OnboardingState {
+    DISCLOSURE,
+    REQUESTING,
+    DENIED,
+    APP
+}
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val prefs: SharedPreferences by lazy {
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    private val onboardingState = mutableStateOf(OnboardingState.DISCLOSURE)
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         Log.d("NumGuard", "Permiso de notificaciones concedido: $granted")
+        requestPhonePermissions()
+    }
+
+    private val phonePermissionsLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        Log.d("NumGuard", "Permisos de telefono concedidos: $allGranted")
+        requestCallScreeningRole()
     }
 
     private val roleRequestLauncher = registerForActivityResult(
@@ -78,18 +108,29 @@ class MainActivity : ComponentActivity() {
         } else {
             Log.w("NumGuard", "Rol de Call Screening RECHAZADO por el usuario")
         }
+        showApp()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("NumGuard", "MainActivity: onCreate")
 
-        requestNotificationPermissionIfNeeded()
-        requestCallScreeningRole()
+        determineInitialState()
 
         setContent {
             NumGuardTheme {
-                NumGuardApp()
+                when (onboardingState.value) {
+                    OnboardingState.DISCLOSURE -> DisclosureScreen(
+                        onAccept = {
+                            prefs.edit().putBoolean(KEY_DISCLOSURE_ACCEPTED, true).apply()
+                            onboardingState.value = OnboardingState.REQUESTING
+                            requestNotificationPermissionIfNeeded()
+                        }
+                    )
+                    OnboardingState.REQUESTING -> RequestingPermissionsScreen()
+                    OnboardingState.DENIED -> DisclosureDeniedScreen()
+                    OnboardingState.APP -> NumGuardApp()
+                }
             }
         }
     }
@@ -197,7 +238,34 @@ class MainActivity : ComponentActivity() {
             ) {
                 Log.d("NumGuard", "Solicitando permiso de notificaciones...")
                 notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                requestPhonePermissions()
             }
+        } else {
+            requestPhonePermissions()
+        }
+    }
+
+    private fun requestPhonePermissions() {
+        val permissionsToRequest = mutableListOf(
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.READ_CONTACTS
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            permissionsToRequest.add(Manifest.permission.ANSWER_PHONE_CALLS)
+        }
+
+        val allGranted = permissionsToRequest.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (allGranted) {
+            requestCallScreeningRole()
+        } else {
+            Log.d("NumGuard", "Solicitando permisos de telefono...")
+            phonePermissionsLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 
@@ -212,9 +280,47 @@ class MainActivity : ComponentActivity() {
                 Log.d("NumGuard", "Solicitando rol de Call Screening...")
                 val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
                 roleRequestLauncher.launch(intent)
+            } else {
+                showApp()
             }
         } else {
-            Log.w("NumGuard", "La versión de Android es menor a Q, no se puede solicitar el rol de Call Screening")
+            Log.w("NumGuard", "Android < Q, no se puede solicitar rol de Call Screening")
+            showApp()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (onboardingState.value == OnboardingState.DENIED && allCriticalPermissionsGranted()) {
+            onboardingState.value = OnboardingState.APP
+        }
+    }
+
+    private fun determineInitialState() {
+        val disclosureAccepted = prefs.getBoolean(KEY_DISCLOSURE_ACCEPTED, false)
+
+        if (disclosureAccepted) {
+            if (allCriticalPermissionsGranted()) {
+                onboardingState.value = OnboardingState.APP
+                requestNotificationPermissionIfNeeded()
+            } else {
+                onboardingState.value = OnboardingState.DENIED
+            }
+        }
+    }
+
+    private fun showApp() {
+        onboardingState.value = OnboardingState.APP
+    }
+
+    private fun allCriticalPermissionsGranted(): Boolean {
+        val phonePerms = listOf(
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+            Manifest.permission.READ_CONTACTS
+        )
+        return phonePerms.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 }
