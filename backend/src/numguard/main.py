@@ -4,7 +4,7 @@ from time import perf_counter
 
 import structlog
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -21,7 +21,17 @@ from .core.metrics import (
 )
 
 logger = structlog.get_logger(__name__)
-_ADMIN_STATIC = str(Path(__file__).resolve().parent / "admin" / "static")
+_base_path = Path(__file__).resolve().parent
+_static_path = _base_path / "admin" / "static"
+if not _static_path.exists():
+    _docker_path = Path("/app/src/numguard/admin/static")
+    if _docker_path.exists():
+        _static_path = _docker_path
+    else:
+        _local_path = Path.cwd() / "src" / "numguard" / "admin" / "static"
+        if _local_path.exists():
+            _static_path = _local_path
+_ADMIN_STATIC = str(_static_path)
 
 _PROM_ROUTES = frozenset({"/metrics", "/admin/metrics"})
 
@@ -92,6 +102,18 @@ def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, version=settings.api_version)
     app.add_middleware(ExceptionHandlingMiddleware)
     app.middleware("http")(_prometheus_middleware)
+
+    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
+    def render_landing():
+        landing_path = Path(__file__).resolve().parent / "templates" / "landing.html"
+        if landing_path.exists():
+            return HTMLResponse(content=landing_path.read_text(encoding="utf-8"))
+        
+        fallback_path = Path("/app/src/numguard/templates/landing.html")
+        if fallback_path.exists():
+            return HTMLResponse(content=fallback_path.read_text(encoding="utf-8"))
+            
+        return HTMLResponse(content="<h1>Welcome to Patova API</h1>")
 
     app.include_router(api_router)
 

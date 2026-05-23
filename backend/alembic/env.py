@@ -11,6 +11,7 @@ import numguard.models.phone_number  # noqa: F401
 import numguard.models.report  # noqa: F401
 import numguard.models.user_preferences  # noqa: F401
 import numguard.models.whitelist_entry  # noqa: F401
+import numguard.models.subscription  # noqa: F401
 from alembic import context
 from numguard.core.config import get_settings
 from numguard.db.base import Base

@@ -68,18 +68,29 @@ async def mp_webhook(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
+    q_id = request.query_params.get("id")
+    q_topic = request.query_params.get("topic") or request.query_params.get("type")
+
+    body = {}
     try:
         body = await request.json()
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+        pass
 
     payment_id = None
     event_id = None
 
-    if "data" in body and "id" in body["data"]:
-        payment_id = str(body["data"]["id"])
-    if "id" in body:
-        event_id = str(body["id"])
+    if body:
+        if "data" in body and "id" in body["data"]:
+            payment_id = str(body["data"]["id"])
+        if "id" in body:
+            event_id = str(body["id"])
+
+    if not payment_id and q_id:
+        if q_topic == "payment":
+            payment_id = str(q_id)
+        else:
+            event_id = str(q_id)
 
     webhook_id = payment_id or event_id
     if not webhook_id:
@@ -93,9 +104,11 @@ async def mp_webhook(
 
     await redis.setex(idempotency_key, _WEBHOOK_IDEMPOTENCY_TTL, "processed")
 
+    event_type = body.get("type", body.get("action", q_topic or "unknown"))
+
     webhook_event = WebhookEvent(
         id=webhook_id,
-        event_type=body.get("type", body.get("action", "unknown")),
+        event_type=event_type,
         payment_id=payment_id,
     )
     session.add(webhook_event)

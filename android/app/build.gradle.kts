@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "ar.com.numguard"
+    namespace = "ar.com.patova"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "ar.com.numguard"
+        applicationId = "ar.com.patova"
         minSdk = 29
         targetSdk = 34
         versionCode = 1
@@ -22,17 +22,17 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8000/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://65a5-152-170-2-32.ngrok-free.app/\"")
         buildConfigField("String", "API_KEY", "\"dev-dummy-key\"")
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8000/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://65a5-152-170-2-32.ngrok-free.app/\"")
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"https://api.numguard.com.ar/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://api.patova.serra.agency/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

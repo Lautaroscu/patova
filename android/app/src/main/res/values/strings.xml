@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NumGuard</string>
+    <string name="app_name">Patova</string>
     <string name="channel_blocked_name">Llamadas bloqueadas</string>
-    <string name="channel_blocked_description">Notificaciones de llamadas bloqueadas por NumGuard</string>
+    <string name="channel_blocked_description">Notificaciones de llamadas bloqueadas por Patova</string>
     <string name="channel_error_name">Errores de verificacion</string>
     <string name="channel_error_description">Errores al verificar llamadas</string>
 </resources>

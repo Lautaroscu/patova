@@ -41,8 +41,8 @@ class MercadoPagoClient:
         user_id: str,
     ) -> dict:
         plan_prices = {
-            "premium_monthly": {"title": "NumGuard Premium Mensual", "price": 1000.0},
-            "premium_annual": {"title": "NumGuard Premium Anual", "price": 9600.0},
+            "premium_monthly": {"title": "Patova Premium Mensual", "price": 1000.0},
+            "premium_annual": {"title": "Patova Premium Anual", "price": 9600.0},
         }
         plan = plan_prices.get(plan_id, plan_prices["premium_monthly"])
 
@@ -54,7 +54,7 @@ class MercadoPagoClient:
                 {
                     "id": plan_id,
                     "title": plan["title"],
-                    "description": f"Suscripcion NumGuard Premium - {plan_id}",
+                    "description": f"Suscripcion Patova Premium - {plan_id}",
                     "quantity": 1,
                     "currency_id": "ARS",
                     "unit_price": plan["price"],
@@ -64,12 +64,12 @@ class MercadoPagoClient:
             "external_reference": external_ref,
             "notification_url": notification_url,
             "back_urls": {
-                "success": "https://numguard.com.ar/success",
-                "failure": "https://numguard.com.ar/failure",
-                "pending": "https://numguard.com.ar/pending",
+                "success": "patova://checkout/success",
+                "failure": "patova://checkout/failure",
+                "pending": "patova://checkout/pending",
             },
-            "auto_return": "approved",
-            "statement_descriptor": "NumGuard Premium",
+            "auto_return": "all",
+            "statement_descriptor": "Patova Premium",
         }
 
         client = await self._get_client()
@@ -101,7 +101,7 @@ class MercadoPagoClient:
     def _build_webhook_url(self) -> str:
         settings = get_settings()
         if settings.mp_webhook_base_url:
-            return f"{settings.mp_webhook_base_url.rstrip('/')}/api/v1/payments/webhook/mp"
+            return f"{settings.mp_webhook_base_url.rstrip('/')}/v1/payments/webhook/mp"
         return ""
 
 
