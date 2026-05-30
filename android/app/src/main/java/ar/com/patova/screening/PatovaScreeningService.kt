@@ -31,6 +31,9 @@ class PatovaScreeningService : CallScreeningService() {
     @Inject
     lateinit var callEventDao: CallEventDao
 
+    @Inject
+    lateinit var premiumCache: ar.com.patova.data.local.PremiumCacheManager
+
     override fun onScreenCall(callDetails: Call.Details) {
         val rawNumber = callDetails.handle?.schemeSpecificPart ?: ""
         Log.d("Patova", "Evaluando llamada entrante: $rawNumber")
@@ -50,12 +53,21 @@ class PatovaScreeningService : CallScreeningService() {
         }
 
         val phoneHash = PhoneHashing.sha256(rawNumber)
+        val isPremium = premiumCache.premiumAvailableOffline
 
         // Paso 3: Comprobar base de datos local (Room)
         val isLocalSpam = checkLocalDatabaseForSpam(phoneHash)
         if (isLocalSpam) {
-            Log.w("Patova", "Paso 3: Spam Confirmado localmente. BLOQUEADO.")
-            respondToCall(callDetails, allow = false, silence = false) // Bloqueo duro
+            if (isPremium) {
+                Log.w("Patova", "Paso 3: Spam Confirmado (Premium). BLOQUEANDO en silencio.")
+                saveCallEvent(phoneHash, rawNumber, "BLOCK", 100, "Spam bloqueado automáticamente", "BLOCKED")
+                respondToCall(callDetails, allow = false, silence = false) // Bloqueo duro silencioso
+            } else {
+                Log.w("Patova", "Paso 3: Spam Confirmado (Gratuito). Dejando pasar y alertando.")
+                saveCallEvent(phoneHash, rawNumber, "BLOCK", 100, "Spam detectado (Plan Gratuito)", "ALLOWED")
+                respondToCall(callDetails, allow = true, silence = false) // Deja pasar para que suene
+                notificationManager.showSpamWarningNotification(rawNumber) // Disparar alerta invasiva de spam
+            }
             return
         }
 
@@ -67,11 +79,26 @@ class PatovaScreeningService : CallScreeningService() {
         }
 
         // Paso 5: Desconocido sin reportes -> Silenciado inteligente (Filtro Suave)
-        Log.i("Patova", "Paso 5: Número desconocido absoluto. Silenciando y alertando de forma suave.")
-        respondToCall(callDetails, allow = true, silence = true)
+        if (isPremium) {
+            Log.i("Patova", "Paso 5: Número desconocido absoluto (Premium). Silenciando silenciosamente en segundo plano.")
+            saveCallEvent(phoneHash, rawNumber, "SUSPECT", 65, "Silenciado inteligente", "ALLOWED")
+            respondToCall(callDetails, allow = true, silence = true)
+        } else {
+            Log.i("Patova", "Paso 5: Número desconocido absoluto (Gratuito). Haciendo sonar normalmente.")
+            respondToCall(callDetails, allow = true, silence = false)
+        }
         
-        // Disparar UI de banner flotante o notificación interactiva
-        notificationManager.showSmartNotification(rawNumber)
+        // Guardar para monitoreo de robocall
+        markForRobocallMonitoring(rawNumber)
+    }
+
+    private fun markForRobocallMonitoring(phoneNumber: String) {
+        val prefs = getSharedPreferences("robocall_monitoring", MODE_PRIVATE)
+        prefs.edit().apply {
+            putString("monitored_number", phoneNumber)
+            putLong("start_time", System.currentTimeMillis())
+            apply()
+        }
     }
 
     private fun isNumberInContacts(phoneNumber: String): Boolean {
@@ -130,9 +157,38 @@ class PatovaScreeningService : CallScreeningService() {
             setDisallowCall(!allow)
             setRejectCall(!allow)
             setSkipCallLog(false)
-            setSkipNotification(silence)
+            setSkipNotification(!allow && silence) // Solo podemos saltar notificación si bloqueamos
             setSilenceCall(silence)
         }.build()
         respondToCall(callDetails, response)
+    }
+
+    private fun saveCallEvent(
+        hash: String,
+        number: String,
+        verdict: String,
+        spamScore: Int?,
+        reason: String?,
+        actionTaken: String
+    ) {
+        runBlocking(Dispatchers.IO) {
+            try {
+                callEventDao.insert(
+                    ar.com.patova.data.local.CallEventEntity(
+                        id = java.util.UUID.randomUUID().toString(),
+                        numberHash = hash,
+                        numberMasked = ar.com.patova.domain.VerdictDecision.maskE164(number),
+                        verdict = verdict,
+                        spamScore = spamScore,
+                        reason = reason,
+                        occurredAtMillis = System.currentTimeMillis(),
+                        actionTaken = actionTaken,
+                        syncedFeedback = false
+                    )
+                )
+            } catch (e: Exception) {
+                Log.e("Patova", "Error al guardar evento de llamada en base de datos", e)
+            }
+        }
     }
 }

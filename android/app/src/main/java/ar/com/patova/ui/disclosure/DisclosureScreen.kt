@@ -144,8 +144,8 @@ private fun DisclosureContent(onAccept: () -> Unit) {
         DisclosureCard(
             icon = Icons.Rounded.Phone,
             iconTint = WarningAmber,
-            title = "Acceso a identificacion de llamadas",
-            description = "Patova necesita acceder a la identificacion de llamadas entrantes para interceptar y verificar numeros fraudulentos en tiempo real. Sin este permiso, la aplicacion no puede funcionar."
+            title = "Análisis local de llamadas",
+            description = "Patova utiliza el acceso a tu Agenda y Call Log exclusivamente de forma local para identificar llamadas. Tus contactos nunca salen de tu dispositivo."
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -153,8 +153,8 @@ private fun DisclosureContent(onAccept: () -> Unit) {
         DisclosureCard(
             icon = Icons.Rounded.Security,
             iconTint = PremiumBlue,
-            title = "Hashes criptograficos SHA-256",
-            description = "Los numeros de telefono se transforman en hashes criptograficos unidireccionales (SHA-256) antes de ser verificados en la nube. Esto significa que el numero original no puede ser recuperado a partir del hash."
+            title = "Hashes criptográficos SHA-256",
+            description = "Antes de consultar nuestra base de datos en la nube, los números se transforman en hashes anónimos. Tu número original es privado e irrecuperable."
         )
 
         Spacer(modifier = Modifier.height(16.dp))

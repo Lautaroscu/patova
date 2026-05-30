@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesando Pago - Patova</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0A0D14;
+            --card-bg: #101420;
+            --border-color: #1E2538;
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --primary-gold: #FFD700;
+            --primary-gold-hover: #F0C400;
+            --accent-glow: rgba(255, 215, 0, 0.08);
+            --error-color: #EF4444;
+            --pending-color: #F59E0B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ambient glow in background */
+        .ambient-light {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, rgba(10, 13, 20, 0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 44px 32px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo-container {
+            margin-bottom: 32px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo-icon {
+            width: 88px;
+            height: 88px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, #1E2538 0%, #101420 100%);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo-icon svg {
+            width: 46px;
+            height: 46px;
+        }
+
+        /* Success Ring/Animation */
+        .status-ring {
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 28px;
+            border: 2px solid transparent;
+            z-index: 1;
+        }
+
+        .card.status-success .status-ring {
+            border-color: var(--primary-gold);
+            animation: pulse-ring 2.5s infinite;
+        }
+
+        .card.status-failure .status-ring {
+            border-color: var(--error-color);
+            animation: pulse-ring-error 2.5s infinite;
+        }
+
+        .card.status-pending .status-ring {
+            border-color: var(--pending-color);
+            animation: pulse-ring-pending 2.5s infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4);
+            }
+            50% {
+                transform: scale(1.04);
+                opacity: 1;
+                box-shadow: 0 0 20px 4px rgba(255, 215, 0, 0.2);
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+            }
+        }
+
+        @keyframes pulse-ring-error {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+            50% {
+                transform: scale(1.04);
+                opacity: 1;
+                box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.2);
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        @keyframes pulse-ring-pending {
+            0% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+            50% {
+                transform: scale(1.04);
+                opacity: 1;
+                box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.2);
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 0.5;
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .card.status-success h1 {
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--primary-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card.status-failure h1 {
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--error-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card.status-pending h1 {
+            background: linear-gradient(135deg, #FFFFFF 0%, var(--pending-color) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 36px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 18px 24px;
+            background: linear-gradient(135deg, var(--primary-gold) 0%, #D4AF37 100%);
+            color: #0A0D14;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 24px rgba(255, 215, 0, 0.15);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(255, 215, 0, 0.25);
+            background: linear-gradient(135deg, #FFE24D 0%, var(--primary-gold) 100%);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-failure {
+            background: linear-gradient(135deg, var(--error-color) 0%, #B91C1C 100%);
+            color: #FFFFFF;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+        }
+
+        .btn-failure:hover {
+            background: linear-gradient(135deg, #F87171 0%, var(--error-color) 100%);
+            box-shadow: 0 12px 28px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-pending {
+            background: linear-gradient(135deg, var(--pending-color) 0%, #D97706 100%);
+            color: #0A0D14;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+        }
+
+        .btn-pending:hover {
+            background: linear-gradient(135deg, #FBBF24 0%, var(--pending-color) 100%);
+            box-shadow: 0 12px 28px rgba(245, 158, 11, 0.25);
+        }
+
+        .auto-redirect-hint {
+            font-size: 13px;
+            color: #475569;
+            margin-top: 24px;
+        }
+
+        .auto-redirect-hint span {
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-light"></div>
+    
+    <div id="status-card" class="card">
+        <div class="logo-container">
+            <div class="status-ring"></div>
+            <div class="logo-icon" id="logo-icon-placeholder">
+                <!-- Will be dynamically populated via JS -->
+            </div>
+        </div>
+
+        <h1 id="title-text">Cargando...</h1>
+        <p class="subtitle" id="subtitle-text">Procesando redirección...</p>
+        
+        <a href="#" id="action-btn" class="btn">Volver a la App</a>
+
+        <p class="auto-redirect-hint">Redirigiendo automáticamente en <span id="countdown">3</span> segundos...</p>
+    </div>
+
+    <script>
+        // Server replaces this variable
+        const status = "{{ status }}";
+        const deepLinkUrl = "patova://checkout/" + status;
+
+        const config = {
+            success: {
+                title: "¡Pago Aprobado!",
+                subtitle: "¡Genial! Tu suscripción Patova Premium ya está activa. Te estamos redirigiendo de vuelta a la app para activar tu protección.",
+                btnText: "Volver a Patova",
+                btnClass: "btn",
+                svg: `<svg viewBox="0 0 24 24" style="fill: var(--primary-gold);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`
+            },
+            failure: {
+                title: "Pago no completado",
+                subtitle: "Hubo un problema al procesar el pago o decidiste volver antes de completarlo. Podés intentar de nuevo desde la app.",
+                btnText: "Volver a Patova",
+                btnClass: "btn btn-failure",
+                svg: `<svg viewBox="0 0 24 24" style="fill: var(--error-color);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`
+            },
+            pending: {
+                title: "Pago Pendiente",
+                subtitle: "Tu pago se encuentra en proceso de aprobación. Volvé a la aplicación para chequear el estado en unos momentos.",
+                btnText: "Volver a Patova",
+                btnClass: "btn btn-pending",
+                svg: `<svg viewBox="0 0 24 24" style="fill: var(--pending-color);"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`
+            }
+        };
+
+        const currentConfig = config[status] || config.pending;
+
+        const cardEl = document.getElementById("status-card");
+        cardEl.className = "card status-" + (status || "pending");
+        
+        document.getElementById("title-text").textContent = currentConfig.title;
+        document.getElementById("subtitle-text").textContent = currentConfig.subtitle;
+        document.getElementById("logo-icon-placeholder").innerHTML = currentConfig.svg;
+        
+        const btnEl = document.getElementById("action-btn");
+        btnEl.href = deepLinkUrl;
+        btnEl.textContent = currentConfig.btnText;
+        btnEl.className = currentConfig.btnClass;
+
+        try {
+            window.location.href = deepLinkUrl;
+        } catch(e) {
+            console.error("Deep link blocked or unsupported natively:", e);
+        }
+
+        let countdown = 3;
+        const countdownEl = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            countdown--;
+            if (countdownEl) {
+                countdownEl.textContent = countdown;
+            }
+            if (countdown <= 0) {
+                clearInterval(interval);
+                try {
+                    window.location.href = deepLinkUrl;
+                } catch(e) {
+                    console.error("Delayed redirect failed:", e);
+                }
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

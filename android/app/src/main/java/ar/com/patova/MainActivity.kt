@@ -99,7 +99,11 @@ class MainActivity : ComponentActivity() {
     ) { permissions ->
         val allGranted = permissions.values.all { it }
         Log.d("Patova", "Permisos de telefono concedidos: $allGranted")
-        requestCallScreeningRole()
+        if (allGranted) {
+            requestCallScreeningRole()
+        } else {
+            onboardingState.value = OnboardingState.DENIED
+        }
     }
 
     private val roleRequestLauncher = registerForActivityResult(
@@ -229,8 +233,10 @@ class MainActivity : ComponentActivity() {
                             uriPattern = "patova://checkout/{status}"
                         }
                     )
-                ) {
+                ) { backStackEntry ->
+                    val status = backStackEntry.arguments?.getString("status")
                     PaywallScreen(
+                        status = status,
                         onBack = { navController.popBackStack() }
                     )
                 }
@@ -326,7 +332,10 @@ class MainActivity : ComponentActivity() {
                 onboardingState.value = OnboardingState.APP
                 requestNotificationPermissionIfNeeded()
             } else {
-                onboardingState.value = OnboardingState.DENIED
+                // Si ya aceptó la divulgación (backup de Google) pero se reiniciaron los permisos por reinstalación,
+                // le volvemos a pedir los permisos dentro de la app en lugar de mandarlo directo a Ajustes.
+                onboardingState.value = OnboardingState.REQUESTING
+                requestNotificationPermissionIfNeeded()
             }
         }
     }

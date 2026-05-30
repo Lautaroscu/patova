@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -210,3 +212,39 @@ async def get_subscription_me(
         is_premium=is_premium,
         subscription=sub_detail,
     )
+
+
+@router.get("/payments/redirect", response_class=HTMLResponse)
+def payment_redirect(
+    result: str = Query("success", description="Status result of the payment: success, failure, pending")
+):
+    template_path = Path(__file__).resolve().parents[2] / "templates" / "redirect.html"
+    if not template_path.exists():
+        template_path = Path("/app/src/numguard/templates/redirect.html")
+    
+    if template_path.exists():
+        html_content = template_path.read_text(encoding="utf-8")
+        html_content = html_content.replace("{{ status }}", result)
+    else:
+        # High fidelity fallback if the template file is missing
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Redirigiendo - Patova</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body {{ background: #0A0D14; color: white; font-family: sans-serif; text-align: center; padding: 50px; }}
+                a {{ color: #FFD700; text-decoration: none; font-weight: bold; border: 1px solid #FFD700; padding: 10px 20px; border-radius: 5px; }}
+            </style>
+        </head>
+        <body>
+            <h1>Redirigiendo a Patova...</h1>
+            <p>Resultado del pago: {result}</p>
+            <p><a href="patova://checkout/{result}">Hacé clic acá si no volvés a la app automáticamente</a></p>
+            <script>window.location.href = "patova://checkout/{result}";</script>
+        </body>
+        </html>
+        """
+    return HTMLResponse(content=html_content)
+

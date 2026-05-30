@@ -49,6 +49,21 @@ class MercadoPagoClient:
         external_ref = f"{user_id}_{int(time.time())}"
         notification_url = self._build_webhook_url()
 
+        settings = get_settings()
+        if settings.mp_webhook_base_url:
+            base_redirect = f"{settings.mp_webhook_base_url.rstrip('/')}/v1/payments/redirect"
+            back_urls = {
+                "success": f"{base_redirect}?result=success",
+                "failure": f"{base_redirect}?result=failure",
+                "pending": f"{base_redirect}?result=pending",
+            }
+        else:
+            back_urls = {
+                "success": "patova://checkout/success",
+                "failure": "patova://checkout/failure",
+                "pending": "patova://checkout/pending",
+            }
+
         payload = {
             "items": [
                 {
@@ -63,11 +78,7 @@ class MercadoPagoClient:
             "payer": {"email": email},
             "external_reference": external_ref,
             "notification_url": notification_url,
-            "back_urls": {
-                "success": "patova://checkout/success",
-                "failure": "patova://checkout/failure",
-                "pending": "patova://checkout/pending",
-            },
+            "back_urls": back_urls,
             "auto_return": "all",
             "statement_descriptor": "Patova Premium",
         }

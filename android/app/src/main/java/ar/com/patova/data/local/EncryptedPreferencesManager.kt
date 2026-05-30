@@ -16,13 +16,40 @@ class EncryptedPreferencesManager @Inject constructor(
         .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
         .build()
 
-    private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        ENCRYPTED_PREFS_FILE,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val prefs: SharedPreferences = try {
+        createEncryptedPrefs(context)
+    } catch (t: Throwable) {
+        android.util.Log.e("Patova", "Error inicializando EncryptedSharedPreferences, purgando datos...", t)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                context.deleteSharedPreferences(ENCRYPTED_PREFS_FILE)
+            } else {
+                val file = java.io.File(context.filesDir.parent, "shared_prefs/${ENCRYPTED_PREFS_FILE}.xml")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Patova", "No se pudo eliminar el archivo de preferencias corrupto", e)
+        }
+        
+        try {
+            createEncryptedPrefs(context)
+        } catch (retryException: Throwable) {
+            android.util.Log.e("Patova", "Fallo catastrófico de Keystore. Fallback a SharedPreferences estándar.", retryException)
+            context.getSharedPreferences(ENCRYPTED_PREFS_FILE, Context.MODE_PRIVATE)
+        }
+    }
+
+    private fun createEncryptedPrefs(context: Context): SharedPreferences {
+        return EncryptedSharedPreferences.create(
+            context,
+            ENCRYPTED_PREFS_FILE,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
 
     fun getString(key: String, defaultValue: String? = null): String? =
         prefs.getString(key, defaultValue)

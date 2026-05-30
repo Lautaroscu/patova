@@ -90,7 +90,16 @@ class PatovaNotificationManager @Inject constructor(
         }
     }
 
-    fun showSmartNotification(phoneNumber: String) {
+    fun showDailyDigestNotification(blockedCount: Int) {
+        if (!hasNotificationPermission()) return
+
+        val title = "🛡️ Patova te protegió hoy"
+        val content = "Bloqueamos $blockedCount llamadas de spam sin interrumpirte."
+
+        showBlockedNotification(title, content)
+    }
+
+    fun showSpamWarningNotification(phoneNumber: String) {
         if (!hasNotificationPermission()) return
 
         val intent = Intent(context, MainActivity::class.java).apply {
@@ -102,11 +111,46 @@ class PatovaNotificationManager @Inject constructor(
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_SMART_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle("⚠️ Patova Free: Llamada de Spam")
+            .setContentText("Detectamos spam de $phoneNumber. Pasate a Premium para rechazarlas en silencio.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .build()
+
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_SMART, notification)
+    }
+
+    fun showSmartNotification(phoneNumber: String) {
+        if (!hasNotificationPermission()) return
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Acción: No es Spam
+        val feedbackIntent = Intent(context, ar.com.patova.receivers.NotificationReceiver::class.java).apply {
+            action = "ACTION_MARK_NOT_SPAM"
+            putExtra("number", phoneNumber)
+        }
+        val feedbackPendingIntent = PendingIntent.getBroadcast(
+            context, 1, feedbackIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_SMART_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Llamada silenciada por Patova")
             .setContentText("Desconocido: $phoneNumber. Toca para ver.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "No es Spam", feedbackPendingIntent)
             .setAutoCancel(true)
             .setOngoing(false)
             .build()

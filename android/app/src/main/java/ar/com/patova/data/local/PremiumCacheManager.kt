@@ -3,7 +3,7 @@ package ar.com.patova.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKeys
+import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -12,15 +12,47 @@ import javax.inject.Singleton
 class PremiumCacheManager @Inject constructor(
     @ApplicationContext context: Context
 ) {
-    private val prefs: SharedPreferences by lazy {
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        EncryptedSharedPreferences.create(
-            "numguard_premium_secure",
-            masterKeyAlias,
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+
+    private val prefs: SharedPreferences = try {
+        createEncryptedPrefs(context)
+    } catch (t: Throwable) {
+        android.util.Log.e("Patova", "Error inicializando Premium SharedPreferences, purgando datos...", t)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                context.deleteSharedPreferences(PREFS_FILE_NAME)
+            } else {
+                val file = java.io.File(context.filesDir.parent, "shared_prefs/${PREFS_FILE_NAME}.xml")
+                if (file.exists()) {
+                    file.delete()
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("Patova", "No se pudo eliminar el archivo de preferencias premium corrupto", e)
+        }
+
+        try {
+            createEncryptedPrefs(context)
+        } catch (retryException: Throwable) {
+            android.util.Log.e("Patova", "Fallo catastrófico de Keystore en PremiumCache. Fallback a SharedPreferences estándar.", retryException)
+            context.getSharedPreferences(PREFS_FILE_NAME, Context.MODE_PRIVATE)
+        }
+    }
+
+    private fun createEncryptedPrefs(context: Context): SharedPreferences {
+        return EncryptedSharedPreferences.create(
             context,
+            PREFS_FILE_NAME,
+            masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
+    }
+
+    companion object {
+        private const val PREFS_FILE_NAME = "patova_premium_secure_prefs"
     }
 
     var isPremium: Boolean
@@ -84,5 +116,21 @@ class PremiumCacheManager @Inject constructor(
 
     fun updateLastSync() {
         this.lastSyncMillis = System.currentTimeMillis()
+    }
+
+    fun getReportsCountToday(): Int {
+        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        val lastReportDate = prefs.getString("last_report_date", "")
+        if (lastReportDate != todayStr) {
+            prefs.edit().putString("last_report_date", todayStr).putInt("reports_count_today", 0).apply()
+            return 0
+        }
+        return prefs.getInt("reports_count_today", 0)
+    }
+
+    fun incrementReportsCountToday() {
+        val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+        val count = getReportsCountToday()
+        prefs.edit().putString("last_report_date", todayStr).putInt("reports_count_today", count + 1).apply()
     }
 }

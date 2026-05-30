@@ -32,4 +32,10 @@ interface PatovaApi {
 
     @GET("v1/subscriptions/me")
     suspend fun getSubscriptionMe(@Query("user_id") userId: String): SubscriptionMeResponse
+
+    @POST("v1/behavior/sync")
+    suspend fun sync(@Body request: SyncRequest): SyncResponse
+
+    @GET("v1/stats")
+    suspend fun getStats(): StatsResponse
 }

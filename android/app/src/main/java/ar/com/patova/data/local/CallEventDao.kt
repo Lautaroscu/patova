@@ -12,6 +12,9 @@ interface CallEventDao {
     @Query("SELECT * FROM call_events ORDER BY occurred_at_millis DESC")
     fun getAllFlow(): Flow<List<CallEventEntity>>
 
+    @Query("SELECT * FROM call_events WHERE occurred_at_millis > :sinceMillis")
+    suspend fun getEventsSince(sinceMillis: Long): List<CallEventEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entity: CallEventEntity)
 

@@ -22,13 +22,13 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "API_BASE_URL", "\"https://65a5-152-170-2-32.ngrok-free.app/\"")
+        buildConfigField("String", "API_BASE_URL", "\"https://699b-152-170-2-32.ngrok-free.app/\"")
         buildConfigField("String", "API_KEY", "\"dev-dummy-key\"")
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://65a5-152-170-2-32.ngrok-free.app/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://699b-152-170-2-32.ngrok-free.app/\"")
         }
         release {
             isMinifyEnabled = false

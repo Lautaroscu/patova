@@ -30,3 +30,27 @@ data class ValidateResponse(
     @SerialName("latency_ms")
     val latencyMs: Float? = 0f
 )
+
+@Serializable
+data class TopReportedNumber(
+    @SerialName("number_e164_masked")
+    val numberE164Masked: String,
+    @SerialName("spam_score")
+    val spamScore: Int,
+    @SerialName("report_count")
+    val reportCount: Int,
+    val status: String
+)
+
+@Serializable
+data class StatsResponse(
+    @SerialName("total_numbers")
+    val totalNumbers: Int,
+    @SerialName("total_reports")
+    val totalReports: Int,
+    @SerialName("blocked_today")
+    val blockedToday: Int,
+    @SerialName("top_reported")
+    val topReported: List<TopReportedNumber>
+)
+
