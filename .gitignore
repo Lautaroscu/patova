@@ -17,6 +17,11 @@ build/
 local.properties
 *.apk
 *.aab
+*.keystore
+android-sdk/
+android/.gradle/
+android/app/build/
+android/build/
 
 # IDE
 .idea/
