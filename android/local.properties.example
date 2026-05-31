@@ -30,4 +30,4 @@ PATOVA_DEBUG_API_BASE_URL=https://699b-152-170-2-32.ngrok-free.app/
 
 # [PATOVA_RELEASE_API_BASE_URL]
 # The API base URL used for production release builds.
-PATOVA_RELEASE_API_BASE_URL=https://api.patova.serra.agency/
+PATOVA_RELEASE_API_BASE_URL=https://patova-api.serra.agency/

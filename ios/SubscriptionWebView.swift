@@ -98,7 +98,7 @@ struct SubscriptionWebView: View {
         self.isLoading = true
         self.errorMessage = nil
         
-        let apiURL = URL(string: "https://api.patova.serra.agency/v1/payments/create-preference")!
+        let apiURL = URL(string: "https://patova-api.serra.agency/v1/payments/create-preference")!
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

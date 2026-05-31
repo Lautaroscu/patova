@@ -37,7 +37,7 @@ val patovaDebugBaseUrl = if (rawDebugBaseUrl.startsWith("\"") && rawDebugBaseUrl
 
 val rawReleaseBaseUrl = localProperties.getProperty("PATOVA_RELEASE_API_BASE_URL")
     ?: System.getenv("PATOVA_RELEASE_API_BASE_URL")
-    ?: "https://api.patova.serra.agency/"
+    ?: "https://patova-api.serra.agency/"
 
 val patovaReleaseBaseUrl = if (rawReleaseBaseUrl.startsWith("\"") && rawReleaseBaseUrl.endsWith("\"")) {
     rawReleaseBaseUrl

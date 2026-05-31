@@ -8,7 +8,7 @@ public final class PatovaSyncClient {
     
     public static let shared = PatovaSyncClient()
     
-    private let baseURL = URL(string: "https://api.patova.serra.agency/v1")!
+    private let baseURL = URL(string: "https://patova-api.serra.agency/v1")!
     private let apiKey = "dev-dummy-key" // Reemplazar por tu PATOVA_API_KEY en producción
     private let callKitExtensionIdentifier = "agency.serra.patova.CallDirectory"
     

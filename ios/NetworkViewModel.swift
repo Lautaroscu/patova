@@ -43,7 +43,7 @@ public final class NetworkViewModel: ObservableObject {
     @Published public var topReported = [TopReportedNumber]()
     @Published public var errorMessage: String? = nil
     
-    private let baseURL = URL(string: "https://api.patova.serra.agency/v1")!
+    private let baseURL = URL(string: "https://patova-api.serra.agency/v1")!
     private let apiKey = "dev-dummy-key"
     
     public init() {

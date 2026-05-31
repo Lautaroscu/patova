@@ -52,7 +52,7 @@ public final class PaywallViewModel: ObservableObject {
     @Published public var subscriptionStatus: String? = nil
     @Published public var expiresAtFormatted: String? = nil
     
-    private let baseURL = URL(string: "https://api.patova.serra.agency/v1")!
+    private let baseURL = URL(string: "https://patova-api.serra.agency/v1")!
     private let apiKey = "dev-dummy-key"
     private let userId = "usr_8341f3e48971"
     
