@@ -1,8 +1,8 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from numguard.core.config import get_settings
-from numguard.main import create_app
+from patova.core.config import get_settings
+from patova.main import create_app
 
 REQUIRED_KEYS = [
     "verdict",
@@ -31,7 +31,7 @@ async def client(_app):
 
 def _auth_headers():
     return {
-        "X-NumGuard-Key": get_settings().numguard_api_key,
+        "X-Patova-Key": get_settings().patova_api_key,
         "Content-Type": "application/json",
     }
 

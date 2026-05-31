@@ -1,9 +1,9 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from numguard.core.config import get_settings
-from numguard.main import create_app
-from numguard.services.stats_service import mask_e164
+from patova.core.config import get_settings
+from patova.main import create_app
+from patova.services.stats_service import mask_e164
 
 pytestmark = pytest.mark.integration
 
@@ -22,7 +22,7 @@ async def client(_app):
 
 def _headers():
     return {
-        "X-NumGuard-Key": get_settings().numguard_api_key,
+        "X-Patova-Key": get_settings().patova_api_key,
         "Content-Type": "application/json",
     }
 
@@ -59,7 +59,7 @@ class TestAdminDashboard:
         response = await client.get("/admin", headers=_headers())
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
-        assert "NumGuard Admin" in response.text
+        assert "Patova Admin" in response.text
 
     async def test_admin_contains_cards(self, client: AsyncClient):
         response = await client.get("/admin", headers=_headers())
@@ -73,7 +73,7 @@ class TestMetricsEndpoint:
     async def test_metrics_returns_200(self, client: AsyncClient):
         response = await client.get("/metrics", follow_redirects=True)
         assert response.status_code == 200
-        assert "numguard" in response.text
+        assert "patova" in response.text
 
     async def test_metrics_show_validate_counts_after_usage(self, client: AsyncClient):
         await client.post(
@@ -83,8 +83,8 @@ class TestMetricsEndpoint:
         )
         response = await client.get("/metrics", follow_redirects=True)
         assert response.status_code == 200
-        assert "numguard_validate_requests_total" in response.text
-        assert "numguard_validate_latency_seconds" in response.text
+        assert "patova_validate_requests_total" in response.text
+        assert "patova_validate_latency_seconds" in response.text
 
     async def test_metrics_show_report_counts_after_usage(self, client: AsyncClient):
         await client.post(
@@ -98,7 +98,7 @@ class TestMetricsEndpoint:
         )
         response = await client.get("/metrics", follow_redirects=True)
         assert response.status_code == 200
-        assert "numguard_reports_total" in response.text
+        assert "patova_reports_total" in response.text
 
 
 class TestMasking:

@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from numguard.schemas.sync import (
+from patova.schemas.sync import (
     BlacklistDeltaEntry,
     BlacklistEntryIn,
     CanonicalPreferences,
@@ -14,7 +14,7 @@ from numguard.schemas.sync import (
     WhitelistDeltaEntry,
     WhitelistEntryIn,
 )
-from numguard.services.sync import sync_behavior
+from patova.services.sync import sync_behavior
 
 pytestmark = pytest.mark.unit
 
@@ -152,7 +152,7 @@ class TestSyncService:
 
     @pytest.mark.asyncio
     async def test_last_write_wins_client_newer(self):
-        from numguard.models.user_preferences import UserPreferences
+        from patova.models.user_preferences import UserPreferences
 
         server_prefs = UserPreferences(
             user_id="user-1",
@@ -184,7 +184,7 @@ class TestSyncService:
 
     @pytest.mark.asyncio
     async def test_last_write_wins_server_newer(self):
-        from numguard.models.user_preferences import UserPreferences
+        from patova.models.user_preferences import UserPreferences
 
         server_prefs = UserPreferences(
             user_id="user-1",
@@ -216,7 +216,7 @@ class TestSyncService:
 
     @pytest.mark.asyncio
     async def test_no_local_preferences_returns_server(self):
-        from numguard.models.user_preferences import UserPreferences
+        from patova.models.user_preferences import UserPreferences
 
         server_prefs = UserPreferences(
             user_id="user-1",
@@ -287,7 +287,7 @@ class TestSyncService:
 
     @pytest.mark.asyncio
     async def test_delta_returns_server_entries_client_lacks(self):
-        from numguard.models.blacklist_entry import BlacklistEntry
+        from patova.models.blacklist_entry import BlacklistEntry
 
         server_entry = BlacklistEntry(
             user_id="user-1",

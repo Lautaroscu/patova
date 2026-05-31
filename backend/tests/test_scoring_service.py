@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from numguard.services.scoring_service import (
+from patova.services.scoring_service import (
     calculate_spam_score,
     get_reports_last_24h,
     should_auto_block,

@@ -1,0 +1,33 @@
+# ==============================================================================
+#                  Patova Android App - Local Properties Example
+# ==============================================================================
+# Copy the contents of this file to your local 'local.properties' in this directory.
+#
+# IMPORTANT:
+# - 'local.properties' is strictly ignored by Git and must NEVER be committed.
+# - This is where you configure your local development settings and secret keys.
+# ==============================================================================
+
+# [sdk.dir] The path to your Android SDK.
+# Android Studio generates this line automatically. Keep your existing path!
+# sdk.dir=/path/to/your/android/sdk
+
+# ------------------------------------------------------------------------------
+# 1. API KEYS & SECURITY KEYS
+# ------------------------------------------------------------------------------
+# [PATOVA_API_KEY] ** SECRET **
+# The API key required to connect to the Patova backend APIs.
+# - For local development: Set it to your local dev API key.
+# - For production release builds: Set it to your production API key before building the AAB/APK.
+PATOVA_API_KEY=YOUR_SECURE_API_KEY_HERE
+
+# ------------------------------------------------------------------------------
+# 2. BACKEND API ENDPOINTS
+# ------------------------------------------------------------------------------
+# [PATOVA_DEBUG_API_BASE_URL]
+# The API base URL used for debug/development builds (e.g. ngrok tunnel).
+PATOVA_DEBUG_API_BASE_URL=https://699b-152-170-2-32.ngrok-free.app/
+
+# [PATOVA_RELEASE_API_BASE_URL]
+# The API base URL used for production release builds.
+PATOVA_RELEASE_API_BASE_URL=https://api.patova.serra.agency/

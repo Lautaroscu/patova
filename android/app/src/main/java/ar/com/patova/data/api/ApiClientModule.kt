@@ -44,7 +44,7 @@ object ApiClientModule {
             .addInterceptor(logging)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
-                    .addHeader("X-NumGuard-Key", BuildConfig.API_KEY)
+                    .addHeader("X-Patova-Key", BuildConfig.API_KEY)
                     .addHeader("Accept", "application/json")
                     .build()
                 chain.proceed(request)

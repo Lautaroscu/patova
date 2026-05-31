@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from numguard.core.cache import SpamReputationCache
+from patova.core.cache import SpamReputationCache
 
 pytestmark = pytest.mark.unit
 
@@ -184,7 +184,7 @@ class TestCacheResilienceEndToEnd:
 class TestRateLimitSecurity:
     @pytest.mark.asyncio
     async def test_ip_rate_limit_allows_first_request(self):
-        from numguard.core.security import check_ip_rate_limit
+        from patova.core.security import check_ip_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.return_value = 0
@@ -196,7 +196,7 @@ class TestRateLimitSecurity:
 
     @pytest.mark.asyncio
     async def test_ip_rate_limit_blocks_exceeded(self):
-        from numguard.core.security import check_ip_rate_limit
+        from patova.core.security import check_ip_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.return_value = 60
@@ -207,7 +207,7 @@ class TestRateLimitSecurity:
 
     @pytest.mark.asyncio
     async def test_ip_rate_limit_handles_redis_failure(self):
-        from numguard.core.security import check_ip_rate_limit
+        from patova.core.security import check_ip_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.side_effect = ConnectionError("Redis error")
@@ -217,7 +217,7 @@ class TestRateLimitSecurity:
 
     @pytest.mark.asyncio
     async def test_token_rate_limit_allows_first_request(self):
-        from numguard.core.security import check_token_rate_limit
+        from patova.core.security import check_token_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.return_value = 0
@@ -228,7 +228,7 @@ class TestRateLimitSecurity:
 
     @pytest.mark.asyncio
     async def test_token_rate_limit_blocks_exceeded(self):
-        from numguard.core.security import check_token_rate_limit
+        from patova.core.security import check_token_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.return_value = 1000
@@ -238,7 +238,7 @@ class TestRateLimitSecurity:
 
     @pytest.mark.asyncio
     async def test_token_rate_limit_handles_redis_failure(self):
-        from numguard.core.security import check_token_rate_limit
+        from patova.core.security import check_token_rate_limit
 
         mock_redis = AsyncMock()
         mock_redis.get.side_effect = ConnectionError("Redis error")

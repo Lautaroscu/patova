@@ -102,7 +102,7 @@ struct SubscriptionWebView: View {
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("dev-dummy-key", forHTTPHeaderField: "X-NumGuard-Key") // Cabecera de API Key
+        request.setValue("dev-dummy-key", forHTTPHeaderField: "X-Patova-Key") // Cabecera de API Key
         
         let payload: [String: Any] = [
             "plan_id": "premium_monthly",

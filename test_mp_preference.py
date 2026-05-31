@@ -7,7 +7,7 @@ def main():
     url = "http://localhost:8000/v1/payments/create-preference"
     headers = {
         "Content-Type": "application/json",
-        "X-NumGuard-Key": "dev-dummy-key"
+        "X-Patova-Key": "dev-dummy-key"
     }
     
     # Datos de prueba para crear la preferencia de suscripción mensual

@@ -1,9 +1,48 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+}
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
+val rawApiKey = localProperties.getProperty("PATOVA_API_KEY")
+    ?: System.getenv("PATOVA_API_KEY")
+    ?: "dev-dummy-key"
+
+val patovaApiKey = if (rawApiKey.startsWith("\"") && rawApiKey.endsWith("\"")) {
+    rawApiKey
+} else {
+    "\"$rawApiKey\""
+}
+
+val rawDebugBaseUrl = localProperties.getProperty("PATOVA_DEBUG_API_BASE_URL")
+    ?: System.getenv("PATOVA_DEBUG_API_BASE_URL")
+    ?: "https://699b-152-170-2-32.ngrok-free.app/"
+
+val patovaDebugBaseUrl = if (rawDebugBaseUrl.startsWith("\"") && rawDebugBaseUrl.endsWith("\"")) {
+    rawDebugBaseUrl
+} else {
+    "\"$rawDebugBaseUrl\""
+}
+
+val rawReleaseBaseUrl = localProperties.getProperty("PATOVA_RELEASE_API_BASE_URL")
+    ?: System.getenv("PATOVA_RELEASE_API_BASE_URL")
+    ?: "https://api.patova.serra.agency/"
+
+val patovaReleaseBaseUrl = if (rawReleaseBaseUrl.startsWith("\"") && rawReleaseBaseUrl.endsWith("\"")) {
+    rawReleaseBaseUrl
+} else {
+    "\"$rawReleaseBaseUrl\""
 }
 
 android {
@@ -22,17 +61,17 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "API_BASE_URL", "\"https://699b-152-170-2-32.ngrok-free.app/\"")
-        buildConfigField("String", "API_KEY", "\"dev-dummy-key\"")
+        buildConfigField("String", "API_BASE_URL", patovaDebugBaseUrl)
+        buildConfigField("String", "API_KEY", patovaApiKey)
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"https://699b-152-170-2-32.ngrok-free.app/\"")
+            buildConfigField("String", "API_BASE_URL", patovaDebugBaseUrl)
         }
         release {
             isMinifyEnabled = false
-            buildConfigField("String", "API_BASE_URL", "\"https://api.patova.serra.agency/\"")
+            buildConfigField("String", "API_BASE_URL", patovaReleaseBaseUrl)
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

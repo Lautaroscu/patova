@@ -4,17 +4,17 @@ from logging.config import fileConfig
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
-import numguard.models.area_prefix  # noqa: F401
-import numguard.models.blacklist_entry  # noqa: F401
-import numguard.models.feedback_event  # noqa: F401
-import numguard.models.phone_number  # noqa: F401
-import numguard.models.report  # noqa: F401
-import numguard.models.user_preferences  # noqa: F401
-import numguard.models.whitelist_entry  # noqa: F401
-import numguard.models.subscription  # noqa: F401
+import patova.models.area_prefix  # noqa: F401
+import patova.models.blacklist_entry  # noqa: F401
+import patova.models.feedback_event  # noqa: F401
+import patova.models.phone_number  # noqa: F401
+import patova.models.report  # noqa: F401
+import patova.models.user_preferences  # noqa: F401
+import patova.models.whitelist_entry  # noqa: F401
+import patova.models.subscription  # noqa: F401
 from alembic import context
-from numguard.core.config import get_settings
-from numguard.db.base import Base
+from patova.core.config import get_settings
+from patova.db.base import Base
 
 config = context.config
 settings = get_settings()

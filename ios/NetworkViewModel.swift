@@ -57,7 +57,7 @@ public final class NetworkViewModel: ObservableObject {
         var request = URLRequest(url: baseURL.appendingPathComponent("/stats"))
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-NumGuard-Key")
+        request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
         
         Task {
             do {

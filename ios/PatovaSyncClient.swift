@@ -9,7 +9,7 @@ public final class PatovaSyncClient {
     public static let shared = PatovaSyncClient()
     
     private let baseURL = URL(string: "https://api.patova.serra.agency/v1")!
-    private let apiKey = "dev-dummy-key" // Reemplazar por tu NUMGUARD_API_KEY en producción
+    private let apiKey = "dev-dummy-key" // Reemplazar por tu PATOVA_API_KEY en producción
     private let callKitExtensionIdentifier = "agency.serra.patova.CallDirectory"
     
     private init() {}
@@ -114,7 +114,7 @@ public final class PatovaSyncClient {
         var request = URLRequest(url: baseURL.appendingPathComponent("/behavior/sync"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-NumGuard-Key") // Cabecera de Seguridad obligatoria
+        request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key") // Cabecera de Seguridad obligatoria
         request.httpBody = try JSONEncoder().encode(requestBody)
         
         // 3. Realizar la llamada HTTP

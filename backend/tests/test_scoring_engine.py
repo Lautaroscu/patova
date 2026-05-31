@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from numguard.services.scoring.engine import (
+from patova.services.scoring.engine import (
     _classify_state,
     _sigscore,
     _describe_flags,

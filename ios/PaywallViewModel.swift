@@ -83,7 +83,7 @@ public final class PaywallViewModel: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-NumGuard-Key")
+        request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
         
         Task {
             do {
@@ -136,7 +136,7 @@ public final class PaywallViewModel: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "X-NumGuard-Key")
+        request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
         
         // Cero Fricción de Correo (UX de Un Toque)
         // Generar un correo electrónico técnico único e invisible de fondo

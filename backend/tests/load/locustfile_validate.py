@@ -11,7 +11,7 @@ class ValidateUser(HttpUser):
     wait_time = between(0.05, 0.15)
 
     def on_start(self):
-        self.api_key = os.getenv("NUMGUARD_API_KEY", "change-me-local-dev-key")
+        self.api_key = os.getenv("PATOVA_API_KEY", "change-me-local-dev-key")
 
     @task(80)
     def validate_cached_number(self):
@@ -23,7 +23,7 @@ class ValidateUser(HttpUser):
                 "device_id": "locust-cached-dev",
                 "call_direction": "INCOMING",
             },
-            headers={"X-NumGuard-Key": self.api_key, "Content-Type": "application/json"},
+            headers={"X-Patova-Key": self.api_key, "Content-Type": "application/json"},
         )
 
     @task(15)
@@ -38,7 +38,7 @@ class ValidateUser(HttpUser):
                 "device_id": "locust-noncached-dev",
                 "call_direction": "INCOMING",
             },
-            headers={"X-NumGuard-Key": self.api_key, "Content-Type": "application/json"},
+            headers={"X-Patova-Key": self.api_key, "Content-Type": "application/json"},
         )
 
     @task(5)
@@ -57,5 +57,5 @@ class ValidateUser(HttpUser):
                 "device_id": "locust-invalid-dev",
                 "call_direction": "INCOMING",
             },
-            headers={"X-NumGuard-Key": self.api_key, "Content-Type": "application/json"},
+            headers={"X-Patova-Key": self.api_key, "Content-Type": "application/json"},
         )

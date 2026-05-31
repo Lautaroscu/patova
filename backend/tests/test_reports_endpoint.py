@@ -3,9 +3,9 @@ import time
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from numguard.core.config import get_settings
-from numguard.db.redis import get_redis_client
-from numguard.main import create_app
+from patova.core.config import get_settings
+from patova.db.redis import get_redis_client
+from patova.main import create_app
 
 pytestmark = pytest.mark.integration
 
@@ -24,7 +24,7 @@ async def client(_app):
 
 def _headers():
     return {
-        "X-NumGuard-Key": get_settings().numguard_api_key,
+        "X-Patova-Key": get_settings().patova_api_key,
         "Content-Type": "application/json",
     }
 
@@ -36,10 +36,10 @@ def _unique_device(prefix: str) -> str:
 @pytest.fixture(autouse=True)
 async def _flush_abuse_keys():
     redis_client = get_redis_client()
-    keys = await redis_client.keys("numguard:report-limit:*")
+    keys = await redis_client.keys("patova:report-limit:*")
     if keys:
         await redis_client.delete(*keys)
-    keys = await redis_client.keys("numguard:report-dedupe:*")
+    keys = await redis_client.keys("patova:report-dedupe:*")
     if keys:
         await redis_client.delete(*keys)
 

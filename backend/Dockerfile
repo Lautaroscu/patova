@@ -25,8 +25,8 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-RUN groupadd --system --gid 1001 numguard \
-    && useradd --system --no-log-init --uid 1001 --gid numguard --home /app numguard
+RUN groupadd --system --gid 1001 patova \
+    && useradd --system --no-log-init --uid 1001 --gid patova --home /app patova
 
 COPY --from=builder /app/.venv /app/.venv
 COPY alembic.ini .
@@ -34,13 +34,13 @@ COPY alembic/ alembic/
 COPY src/ src/
 COPY .env.example .env.example
 
-RUN chown -R numguard:numguard /app
+RUN chown -R patova:patova /app
 
-USER numguard
+USER patova
 
-EXPOSE 8000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import http.client; c = http.client.HTTPConnection('localhost', 8000); c.request('GET', '/health'); r = c.getresponse(); exit(0 if r.status == 200 else 1)" || exit 1
+CMD python -c "import http.client, os; port = int(os.environ.get('PORT', '8080')); c = http.client.HTTPConnection('localhost', port); c.request('GET', '/health'); r = c.getresponse(); exit(0 if r.status == 200 else 1)" || exit 1
 
-CMD ["sh", "-c", "uvicorn numguard.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8000} --log-level info"]
+CMD ["sh", "-c", "uvicorn patova.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8080} --log-level info"]

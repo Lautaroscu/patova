@@ -17,7 +17,7 @@ class ScrapedSpamNumber:
 class SpamSeeder:
     """
     Scraper básico para extraer números denunciados de páginas públicas.
-    Esto permite poblar la base de datos de NumGuard antes de tener usuarios activos.
+    Esto permite poblar la base de datos de Patova antes de tener usuarios activos.
     """
     
     def __init__(self):
@@ -101,7 +101,7 @@ class SpamSeeder:
         """
         Punto de entrada: Raspa las páginas y guarda los resultados en la base de datos de PostgreSQL.
         """
-        print("🚀 Iniciando el Seeder de NumGuard...")
+        print("🚀 Iniciando el Seeder de Patova...")
         scraped_data = await self.scrape_listaspam()
         
         # Acá conectaríamos con SQLAlchemy para insertarlos en la base de datos

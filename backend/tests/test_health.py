@@ -9,7 +9,7 @@ def test_health_ok(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["service"] == "numguard-api"
+    assert data["service"] == "patova-api"
     assert data["version"] == "v1"
 
 
@@ -18,5 +18,5 @@ def test_v1_health_ok(client: TestClient):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["service"] == "numguard-api"
+    assert data["service"] == "patova-api"
     assert data["version"] == "v1"

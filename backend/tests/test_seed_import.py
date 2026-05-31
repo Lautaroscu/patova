@@ -6,10 +6,10 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from numguard.core.config import get_settings
-from numguard.models.area_prefix import AreaPrefix
-from numguard.models.enums import NumberStatus
-from numguard.models.phone_number import PhoneNumber
+from patova.core.config import get_settings
+from patova.models.area_prefix import AreaPrefix
+from patova.models.enums import NumberStatus
+from patova.models.phone_number import PhoneNumber
 
 pytestmark = pytest.mark.integration
 

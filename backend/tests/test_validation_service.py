@@ -2,11 +2,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from numguard.models.area_prefix import AreaPrefix
-from numguard.models.enums import NumberStatus
-from numguard.models.phone_number import PhoneNumber
-from numguard.schemas.validation import Verdict
-from numguard.services.validation_service import (
+from patova.models.area_prefix import AreaPrefix
+from patova.models.enums import NumberStatus
+from patova.models.phone_number import PhoneNumber
+from patova.schemas.validation import Verdict
+from patova.services.validation_service import (
     _decide_verdict,
     _LookupResult,
     _prefix_zone,

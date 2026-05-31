@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from numguard.services.cache_service import (
+from patova.services.cache_service import (
     TTL_ALLOW,
     TTL_BLOCK,
     TTL_INVALID_PREFIX,
@@ -22,7 +22,7 @@ class TestCacheKey:
         key = _cache_key("+541112345678")
         assert "+54" not in key
         assert "1112345678" not in key
-        assert key.startswith("numguard:validate:")
+        assert key.startswith("patova:validate:")
 
     def test_key_is_deterministic(self):
         assert _cache_key("+541112345678") == _cache_key("+541112345678")
@@ -32,7 +32,7 @@ class TestCacheKey:
 
     def test_cache_key_prefix(self):
         key = _cache_key("+541112345678")
-        assert key.count("numguard:validate:") == 1
+        assert key.count("patova:validate:") == 1
 
 
 class TestGetCachedResult:
@@ -105,6 +105,6 @@ class TestSetCachedResult:
             mock_redis, "+541112345678", {"verdict": "BLOCK"}, "BLOCK"
         )
         key = mock_redis.setex.call_args[0][0]
-        assert "numguard:validate:" in key
+        assert "patova:validate:" in key
         assert "+54" not in key
         assert "1112345678" not in key

@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from numguard.main import create_app
+from patova.main import create_app
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 [project]
-name = "numguard-backend"
+name = "patova-backend"
 version = "0.1.0"
-description = "NumGuard MVP Validation API"
+description = "Patova MVP Validation API"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115",
@@ -56,8 +56,8 @@ indent-style = "space"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/load/*" = ["ALL"]
-"src/numguard/api/v1/*.py" = ["B008"]
-"src/numguard/admin/*.py" = ["B008"]
+"src/patova/api/v1/*.py" = ["B008"]
+"src/patova/admin/*.py" = ["B008"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

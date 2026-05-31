@@ -1,6 +1,6 @@
 import pytest
 
-from numguard.db.redis import get_redis_client
+from patova.db.redis import get_redis_client
 
 pytestmark = pytest.mark.integration
 

@@ -1,6 +1,6 @@
 import pytest
 
-from numguard.services.stats_service import mask_e164
+from patova.services.stats_service import mask_e164
 
 pytestmark = pytest.mark.unit
 

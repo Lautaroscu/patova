@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from numguard.services.abuse_guard import (
+from patova.services.abuse_guard import (
     _hash_device,
     _hash_number,
     check_dedupe,
