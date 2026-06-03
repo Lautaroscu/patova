@@ -14,6 +14,10 @@ targets:
           - "project.yml"
           - "*.entitlements"
           - "README_XCODE.md"
+          - "*.zip"
+          - ".xcodegen"
+          - "xcodegen_tmp"
+          - "*-Info.plist"
     info:
       path: Patova-Info.plist
     settings:
