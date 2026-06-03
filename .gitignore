@@ -45,3 +45,8 @@ android-sdk/
 # Data local
 scripts/data_samples/raw/
 scripts/data_samples/processed/
+
+# iOS local build/generation files
+ios/.xcodegen/
+ios/Patova.xcodeproj
+ios/xcodegen_tmp/
