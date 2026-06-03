@@ -14,8 +14,9 @@ targets:
           - "project.yml"
           - "*.entitlements"
           - "README_XCODE.md"
+    info:
+      path: Patova-Info.plist
     settings:
-      INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
       PRODUCT_BUNDLE_IDENTIFIER: agency.serra.patova
       DEVELOPMENT_TEAM: "" # Dejar vacío para firma automática o configurar el Team ID del desarrollador
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

@@ -336,8 +336,8 @@ struct PaywallView: View {
         .onAppear {
             viewModel.refreshSubscriptionStatus()
         }
-        .onChange(of: viewModel.initPointUrl) { newValue in
-            if newValue != nil {
+        .onChange(of: viewModel.initPointUrl ?? "") { newValue in
+            if !newValue.isEmpty {
                 self.showSafariSheet = true
             }
         }
