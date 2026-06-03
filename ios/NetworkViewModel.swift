@@ -59,9 +59,10 @@ public final class NetworkViewModel: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
         
+        let requestToSend = request
         Task {
             do {
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: requestToSend)
                 
                 guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                     throw NSError(domain: "PatovaNetwork", code: -1, userInfo: [NSLocalizedDescriptionKey: "Error en API de estadísticas"])

@@ -106,7 +106,6 @@ struct DashboardView: View {
                                 Image(systemName: isShieldActive ? "shield.checkerboard" : "shield.slash.fill")
                                     .font(.system(size: 64, weight: .semibold, design: .rounded))
                                     .foregroundColor(isShieldActive ? (isPremium ? .amber : .teal) : .red)
-                                    .contentTransition(.symbolEffect(.replace))
                                 
                                 Text(isShieldActive ? "ACTIVO" : "INACTIVO")
                                     .font(.system(.headline, design: .rounded))

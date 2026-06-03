@@ -85,9 +85,10 @@ public final class PaywallViewModel: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
         
+        let requestToSend = request
         Task {
             do {
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: requestToSend)
                 
                 guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                     throw NSError(domain: "PatovaPaywall", code: -1, userInfo: [NSLocalizedDescriptionKey: "Error revalidando suscripción"])
@@ -156,9 +157,10 @@ public final class PaywallViewModel: ObservableObject {
             return
         }
         
+        let requestToSend = request
         Task {
             do {
-                let (data, response) = try await URLSession.shared.data(for: request)
+                let (data, response) = try await URLSession.shared.data(for: requestToSend)
                 
                 guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                     throw NSError(domain: "PatovaPaywall", code: -1, userInfo: [NSLocalizedDescriptionKey: "Error de servidor al crear preferencia"])
