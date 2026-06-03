@@ -34,12 +34,14 @@ targets:
     sources:
       - path: CallDirectoryHandler.swift
       - path: DatabaseManager.swift
+    info:
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: agency.serra.patova.CallDirectory
       DEVELOPMENT_TEAM: ""
-      INFOPLIST_KEY_NSExtension:
-        NSExtensionPointIdentifier: com.apple.callkit.call-directory
-        NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
     entitlements:
       path: CallDirectory.entitlements
       properties:
