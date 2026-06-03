@@ -351,8 +351,12 @@ struct PaywallView: View {
         .sheet(isPresented: &showSafariSheet, onDismiss: {
             viewModel.onCheckoutComplete()
         }) {
-            if let initPoint = viewModel.initPointUrl, let url = URL(string: initPoint) {
-                SubscriptionWebView(isPremium: $isPremiumLocalForWebView, prefetchedURL: url)
+            Group {
+                if let initPoint = viewModel.initPointUrl, let url = URL(string: initPoint) {
+                    SubscriptionWebView(isPremium: $isPremiumLocalForWebView, prefetchedURL: url)
+                } else {
+                    EmptyView()
+                }
             }
         }
         .sheet(isPresented: &showSuccessCelebration) {
