@@ -1,6 +1,7 @@
 name: Patova
 options:
   bundleIdPrefix: agency.serra
+  xcodeVersion: "13.0"
 targets:
   Patova:
     type: application
