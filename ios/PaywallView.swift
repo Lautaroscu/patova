@@ -348,7 +348,7 @@ struct PaywallView: View {
                 self.viewModel.onCheckoutComplete()
             }
         }
-        .sheet(isPresented: &showSafariSheet, onDismiss: {
+        .sheet(isPresented: $showSafariSheet, onDismiss: {
             viewModel.onCheckoutComplete()
         }) {
             Group {
@@ -359,7 +359,7 @@ struct PaywallView: View {
                 }
             }
         }
-        .sheet(isPresented: &showSuccessCelebration) {
+        .sheet(isPresented: $showSuccessCelebration) {
             SuccessCelebrationView(onDismiss: {
                 self.showSuccessCelebration = false
                 self.isPremiumLocalForWebView = false

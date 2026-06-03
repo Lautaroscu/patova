@@ -260,7 +260,7 @@ struct DashboardView: View {
             checkCallKitPermission()
             updateCounts()
         }
-        .sheet(isPresented: &showSubscriptionSheet) {
+        .sheet(isPresented: $showSubscriptionSheet) {
             PaywallView()
         }
         .preferredColorScheme(.dark)
