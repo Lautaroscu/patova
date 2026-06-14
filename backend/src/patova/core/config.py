@@ -33,6 +33,21 @@ class Settings(BaseSettings):
             v = v.replace("sslmode=req", "ssl=require").replace("sslmode=require", "ssl=require")
         return v
 
+    @field_validator("redis_url", mode="before")
+    @classmethod
+    def normalize_redis_url(cls, v: str) -> str:
+        if not v:
+            return v
+        if v.startswith("rediss://"):
+            # Celery exige el parámetro query 'ssl_cert_reqs' cuando el esquema es 'rediss://'.
+            # Upstash provee conexiones TLS seguras. Usamos 'CERT_NONE' por defecto para evitar 
+            # fallas en entornos contenedorizados/PaaS donde no suele estar configurada la CA local,
+            # pero permitimos que se especifique en la variable de entorno si el usuario lo desea.
+            if "ssl_cert_reqs" not in v:
+                separator = "&" if "?" in v else "?"
+                v = f"{v}{separator}ssl_cert_reqs=CERT_NONE"
+        return v
+
 
     suspect_score_min: int = 21
     block_score_min: int = 61
