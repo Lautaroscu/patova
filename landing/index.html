@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,12 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         :root {
             --bg-primary: #07090E;
@@ -40,7 +43,9 @@
             overflow-x: hidden;
         }
 
-        h1, h2, h3 {
+        h1,
+        h2,
+        h3 {
             font-family: 'Outfit', sans-serif;
             font-weight: 800;
         }
@@ -107,8 +112,8 @@
             height: 52px;
             width: 52px;
             border-radius: 14px;
-            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-            border: 1.5px solid rgba(255,255,255,0.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
         }
 
@@ -176,9 +181,20 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(0.9); opacity: 1; }
-            50% { transform: scale(1.4); opacity: 0.4; }
-            100% { transform: scale(0.9); opacity: 1; }
+            0% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.4);
+                opacity: 0.4;
+            }
+
+            100% {
+                transform: scale(0.9);
+                opacity: 1;
+            }
         }
 
         .hero h1 {
@@ -216,7 +232,7 @@
             border: 2px solid var(--glass-border);
             backdrop-filter: blur(20px);
             padding: 16px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
             position: relative;
             display: flex;
             flex-direction: column;
@@ -243,7 +259,7 @@
             display: flex;
             flex-direction: column;
             padding: 24px 16px;
-            border: 1px solid rgba(255,255,255,0.03);
+            border: 1px solid rgba(255, 255, 255, 0.03);
             position: relative;
         }
 
@@ -258,8 +274,8 @@
             width: 58px;
             height: 58px;
             border-radius: 16px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .screen-title {
@@ -394,7 +410,7 @@
         }
 
         .feature-card {
-            background-color: rgba(255,255,255,0.01);
+            background-color: rgba(255, 255, 255, 0.01);
             border: 1px solid var(--glass-border);
             border-radius: 24px;
             padding: 32px;
@@ -404,7 +420,7 @@
         .feature-card:hover {
             transform: translateY(-5px);
             border-color: rgba(59, 130, 246, 0.3);
-            background-color: rgba(255,255,255,0.02);
+            background-color: rgba(255, 255, 255, 0.02);
         }
 
         .feature-icon {
@@ -641,7 +657,7 @@
             border-radius: 28px;
             max-width: 800px;
             position: relative;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
             text-align: left;
         }
 
@@ -693,15 +709,19 @@
                 text-align: center;
                 padding-top: 60px;
             }
+
             .hero-text {
                 max-width: 100%;
             }
+
             .hero h1 {
                 font-size: 40px;
             }
+
             .hero-mockup {
                 margin-top: 40px;
             }
+
             .pricing-grid {
                 flex-direction: column;
                 align-items: center;
@@ -818,11 +838,19 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="bg-glow glow-top-left"></div>
     <div class="bg-glow glow-bottom-right"></div>
@@ -846,9 +874,12 @@
                 <div class="pulse-dot"></div> Protección Activa Local (Argentina)
             </div>
             <h1>Protegé tus llamadas. Bloqueá el <span>Spam</span> de verdad.</h1>
-            <p>Patova es la aplicación definitiva contra el spam telefónico, llamadas de telemarketing y estafas en Argentina. Usando tecnología avanzada de filtrado local y una base de datos global inteligente, Patova te devuelve el control de tu teléfono.</p>
+            <p>Patova es la aplicación definitiva contra el spam telefónico, llamadas de telemarketing y estafas en
+                Argentina. Usando tecnología avanzada de filtrado local y una base de datos global inteligente, Patova
+                te devuelve el control de tu teléfono.</p>
             <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: inherit;">
-                <a href="#report-spam" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none; color: var(--text-main);">
+                <a href="#report-spam" class="btn-premium"
+                    style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none; color: var(--text-main);">
                     <i class="fa-solid fa-bullhorn"></i> Denunciar Número Molesto
                 </a>
                 <a href="#premium" class="btn-premium">
@@ -856,7 +887,7 @@
                 </a>
             </div>
         </div>
-        
+
         <div class="hero-mockup">
             <div class="phone-mockup">
                 <div class="phone-notch"></div>
@@ -865,7 +896,7 @@
                         <img class="screen-logo" src="patova-icon.png" alt="Patova App Logo">
                         <div class="screen-title">Patova</div>
                     </div>
-                    
+
                     <div class="shield-card">
                         <div class="shield-icon-container">
                             <i class="fa-solid fa-shield-halved"></i>
@@ -896,9 +927,10 @@
         <div class="container">
             <div class="section-title">
                 <h2>¿Cómo funciona Patova?</h2>
-                <p>Nuestra aplicación combina el procesamiento nativo en Android (CallScreeningService) con una API FastAPI optimizada con Redis y PostgreSQL para brindarte protección instantánea.</p>
+                <p>Nuestra aplicación combina el procesamiento nativo en Android (CallScreeningService) con una API
+                    FastAPI optimizada con Redis y PostgreSQL para brindarte protección instantánea.</p>
             </div>
-            
+
             <div class="features-grid">
                 <!-- Feature 1 -->
                 <div class="feature-card">
@@ -906,7 +938,8 @@
                         <i class="fa-solid fa-bolt"></i>
                     </div>
                     <h3>Filtro Local de Alta Velocidad</h3>
-                    <p>La base de datos local en SQLite procesa la reputación de la llamada entrante en menos de 50 milisegundos nativos, interceptando el spam antes de que tu celular suene.</p>
+                    <p>La base de datos local en SQLite procesa la reputación de la llamada entrante en menos de 50
+                        milisegundos nativos, interceptando el spam antes de que tu celular suene.</p>
                 </div>
                 <!-- Feature 2 -->
                 <div class="feature-card">
@@ -914,7 +947,8 @@
                         <i class="fa-solid fa-brain"></i>
                     </div>
                     <h3>Inteligencia contra Estafas (IA)</h3>
-                    <p>Nuestros algoritmos evalúan comportamientos sospechosos y patrones de llamadas repetidas para identificar intentos de vishing, clonación de chips y fraudes telefónicos.</p>
+                    <p>Nuestros algoritmos evalúan comportamientos sospechosos y patrones de llamadas repetidas para
+                        identificar intentos de vishing, clonación de chips y fraudes telefónicos.</p>
                 </div>
                 <!-- Feature 3 -->
                 <div class="feature-card">
@@ -922,7 +956,8 @@
                         <i class="fa-solid fa-cloud-arrow-down"></i>
                     </div>
                     <h3>Sincronización Incremental</h3>
-                    <p>El backend calcula las listas negras locales de forma personalizada y las actualiza incrementalmente. Descargás solo lo nuevo, ahorrando datos móviles y batería.</p>
+                    <p>El backend calcula las listas negras locales de forma personalizada y las actualiza
+                        incrementalmente. Descargás solo lo nuevo, ahorrando datos móviles y batería.</p>
                 </div>
                 <!-- Feature 4 -->
                 <div class="feature-card">
@@ -930,7 +965,8 @@
                         <i class="fa-solid fa-user-shield"></i>
                     </div>
                     <h3>Privacidad Absoluta (Offline-First)</h3>
-                    <p>Patova respeta tu privacidad al 100%. No recopilamos tu agenda de contactos, llamadas personales ni mensajes privados. Tus datos personales son tuyos.</p>
+                    <p>Patova respeta tu privacidad al 100%. No recopilamos tu agenda de contactos, llamadas personales
+                        ni mensajes privados. Tus datos personales son tuyos.</p>
                 </div>
             </div>
         </div>
@@ -941,15 +977,18 @@
         <div class="container">
             <div class="report-container">
                 <h2>¿Te llamó un número molesto?</h2>
-                <p class="desc">Denuncialo ahora mismo de forma anónima para alertar al resto de la comunidad Patova.</p>
-                
+                <p class="desc">Denuncialo ahora mismo de forma anónima para alertar al resto de la comunidad Patova.
+                </p>
+
                 <form id="publicReportForm" class="report-form">
                     <div class="form-group">
                         <label for="publicReportNumber">Número de Teléfono</label>
-                        <input type="text" id="publicReportNumber" class="form-control" placeholder="Ej: +54 9 11 1234-5678" required>
-                        <span style="font-size: 11px; color: var(--text-muted);">Formatos aceptados: +54911..., 115438..., etc. Lo normalizaremos automáticamente.</span>
+                        <input type="text" id="publicReportNumber" class="form-control"
+                            placeholder="Ej: +54 9 11 1234-5678" required>
+                        <span style="font-size: 11px; color: var(--text-muted);">Formatos aceptados: +54911...,
+                            115438..., etc. Lo normalizaremos automáticamente.</span>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="publicReportType">Tipo de Molestia</label>
                         <select id="publicReportType" class="form-control">
@@ -963,14 +1002,17 @@
 
                     <div class="form-group">
                         <label for="publicReportDesc">Comentarios / Qué dijeron (Opcional)</label>
-                        <textarea id="publicReportDesc" class="form-control" rows="3" placeholder="Ej: Llaman ofreciendo planes de portabilidad de manera muy insistente..." style="resize: vertical;"></textarea>
+                        <textarea id="publicReportDesc" class="form-control" rows="3"
+                            placeholder="Ej: Llaman ofreciendo planes de portabilidad de manera muy insistente..."
+                            style="resize: vertical;"></textarea>
                     </div>
-                    
-                    <button type="submit" id="publicReportBtn" class="btn-premium" style="width: 100%; justify-content: center; padding: 16px 24px; font-size: 16px; border: none; cursor: pointer; border-radius: 12px; margin-top: 10px;">
+
+                    <button type="submit" id="publicReportBtn" class="btn-premium"
+                        style="width: 100%; justify-content: center; padding: 16px 24px; font-size: 16px; border: none; cursor: pointer; border-radius: 12px; margin-top: 10px;">
                         <i class="fa-solid fa-bullhorn"></i> Enviar Denuncia Anónima
                     </button>
                 </form>
-                
+
                 <div id="publicReportToast" class="report-toast"></div>
             </div>
         </div>
@@ -981,7 +1023,8 @@
         <div class="container">
             <div class="section-title">
                 <h2>Elegí tu nivel de blindaje</h2>
-                <p>Bloqueá llamadas no deseadas en serio. Sumate a la comunidad Patova Premium en Argentina y recuperá tu tranquilidad.</p>
+                <p>Bloqueá llamadas no deseadas en serio. Sumate a la comunidad Patova Premium en Argentina y recuperá
+                    tu tranquilidad.</p>
             </div>
 
             <div class="pricing-grid">
@@ -990,15 +1033,17 @@
                     <div class="plan-name">Plan Básico</div>
                     <div class="plan-price">$0 <span>/ siempre</span></div>
                     <div class="plan-anchor">Protección esencial y alertas</div>
-                    
+
                     <ul class="plan-features">
                         <li><i class="fa-solid fa-circle-check"></i> Identificación de spam básica</li>
                         <li><i class="fa-solid fa-circle-check"></i> Base de datos manual (ENACOM)</li>
                         <li><i class="fa-solid fa-circle-check"></i> Alertas en pantalla (suena el celular)</li>
                         <li><i class="fa-solid fa-circle-check"></i> Límite de 3 reportes comunitarios diarios</li>
                         <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Bloqueo silencioso automático</li>
-                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Filtro avanzado de vishing (estafas)</li>
-                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Modo offline premium (sin internet)</li>
+                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Filtro avanzado de vishing
+                            (estafas)</li>
+                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Modo offline premium (sin
+                            internet)</li>
                         <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Reportes ilimitados</li>
                     </ul>
 
@@ -1010,7 +1055,7 @@
                     <div class="plan-name">Mensual Premium</div>
                     <div class="plan-price">$1.000 <span>/ mes</span></div>
                     <div class="plan-anchor">Menos que un café al paso al mes</div>
-                    
+
                     <ul class="plan-features">
                         <li><i class="fa-solid fa-circle-check"></i> Identificación de spam avanzada + IA</li>
                         <li><i class="fa-solid fa-circle-check"></i> Filtro avanzado de vishing (estafas)</li>
@@ -1018,7 +1063,8 @@
                         <li><i class="fa-solid fa-circle-check"></i> Base completa en tiempo real</li>
                         <li><i class="fa-solid fa-circle-check"></i> Reportes comunitarios ilimitados</li>
                         <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Modo offline premium</li>
-                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Descuento del 34% (2 meses gratis)</li>
+                        <li class="excluded"><i class="fa-solid fa-circle-xmark"></i> Descuento del 34% (2 meses gratis)
+                        </li>
                     </ul>
 
                     <a href="#" class="btn-pricing">Suscribirme</a>
@@ -1030,15 +1076,22 @@
                     <div class="plan-name" style="color: #F0D070;">Anual Premium</div>
                     <div class="plan-price">$9.600 <span>/ año</span></div>
                     <div class="plan-anchor">Menos que un alfajor al mes ($800)</div>
-                    
+
                     <ul class="plan-features">
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Identificación de spam avanzada + IA</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Filtro avanzado de vishing (estafas)</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Bloqueo silencioso automático al 100%</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Base completa en tiempo real</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Modo offline premium (7 días sin internet)</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Reportes comunitarios ilimitados</li>
-                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> <strong>Ahorro del 34% (2 meses GRATIS)</strong></li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Identificación de spam
+                            avanzada + IA</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Filtro avanzado de vishing
+                            (estafas)</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Bloqueo silencioso
+                            automático al 100%</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Base completa en tiempo
+                            real</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Modo offline premium (7
+                            días sin internet)</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> Reportes comunitarios
+                            ilimitados</li>
+                        <li><i class="fa-solid fa-circle-check" style="color: #F0D070;"></i> <strong>Ahorro del 34% (2
+                                meses GRATIS)</strong></li>
                     </ul>
 
                     <a href="#" class="btn-pricing highlighted">Blindar mi celular</a>
@@ -1069,38 +1122,54 @@
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2>Política de Privacidad</h2>
             <p><strong>Última actualización: 30 de mayo de 2026</strong></p>
-            <p>En Patova, nos tomamos muy en serio la privacidad y seguridad de tus datos. Esta Política de Privacidad detalla cómo recopilamos, utilizamos y protegemos la información cuando utilizas nuestra aplicación móvil y nuestros servicios de backend.</p>
-            
+            <p>En Patova, nos tomamos muy en serio la privacidad y seguridad de tus datos. Esta Política de Privacidad
+                detalla cómo recopilamos, utilizamos y protegemos la información cuando utilizas nuestra aplicación
+                móvil y nuestros servicios de backend.</p>
+
             <h3>1. Información que recopilamos</h3>
-            <p>Para brindarte el servicio de identificación y bloqueo de spam, Patova recopila y procesa únicamente la siguiente información:</p>
+            <p>Para brindarte el servicio de identificación y bloqueo de spam, Patova recopila y procesa únicamente la
+                siguiente información:</p>
             <ul>
-                <li><strong>Números de llamadas entrantes:</strong> Cuando recibes una llamada, la aplicación móvil procesa de manera estrictamente local en la base de datos SQLite el número entrante para compararlo con su lista de reputación. Solo los números reportados como SPAM o sospechosos son analizados asíncronamente.</li>
-                <li><strong>Datos de reportes de Spam:</strong> Cuando reportas manualmente un número molesto, recopilamos ese número, la categoría seleccionada y la fecha del reporte.</li>
-                <li><strong>Identificador de dispositivo único anonimizado:</strong> Generamos un identificador único anonimizado al instalar la app para prevenir abusos y reportes fraudulentos de spam.</li>
+                <li><strong>Números de llamadas entrantes:</strong> Cuando recibes una llamada, la aplicación móvil
+                    procesa de manera estrictamente local en la base de datos SQLite el número entrante para compararlo
+                    con su lista de reputación. Solo los números reportados como SPAM o sospechosos son analizados
+                    asíncronamente.</li>
+                <li><strong>Datos de reportes de Spam:</strong> Cuando reportas manualmente un número molesto,
+                    recopilamos ese número, la categoría seleccionada y la fecha del reporte.</li>
+                <li><strong>Identificador de dispositivo único anonimizado:</strong> Generamos un identificador único
+                    anonimizado al instalar la app para prevenir abusos y reportes fraudulentos de spam.</li>
             </ul>
 
             <h3>2. Información que NO recopilamos</h3>
             <p>Patova está construida bajo la filosofía offline-first y privacidad por diseño:</p>
             <ul>
-                <li><strong>NO recopilamos ni subimos tu agenda de contactos</strong> personales a nuestros servidores.</li>
-                <li><strong>NO grabamos</strong> tus llamadas telefónicas ni almacenamos el contenido de las mismas.</li>
+                <li><strong>NO recopilamos ni subimos tu agenda de contactos</strong> personales a nuestros servidores.
+                </li>
+                <li><strong>NO grabamos</strong> tus llamadas telefónicas ni almacenamos el contenido de las mismas.
+                </li>
                 <li><strong>NO recopilamos</strong> ni leemos tus mensajes de texto (SMS).</li>
-                <li><strong>NO vendemos</strong> ni alquilamos tus datos personales a empresas de publicidad ni a terceros.</li>
+                <li><strong>NO vendemos</strong> ni alquilamos tus datos personales a empresas de publicidad ni a
+                    terceros.</li>
             </ul>
 
             <h3>3. Uso de la Información</h3>
             <p>Utilizamos la información recopilada exclusivamente para:</p>
             <ul>
-                <li>Alimentar el motor de reputación global de números sospechosos y mejorar la efectividad del bloqueo de spam.</li>
-                <li>Procesar de forma segura tu suscripción premium a través de nuestro integrador oficial de pagos (Mercado Pago).</li>
+                <li>Alimentar el motor de reputación global de números sospechosos y mejorar la efectividad del bloqueo
+                    de spam.</li>
+                <li>Procesar de forma segura tu suscripción premium a través de nuestro integrador oficial de pagos
+                    (Mercado Pago).</li>
                 <li>Dar soporte y responder a tus consultas técnicas.</li>
             </ul>
 
             <h3>4. Seguridad de los datos</h3>
-            <p>Todos los tráficos de datos entre la aplicación móvil de Patova y nuestro servidor backend se realizan bajo el protocolo seguro y cifrado HTTPS (TLS). Las suscripciones y datos de cobros son gestionados de forma completamente segura directamente por las pasarelas oficiales de Mercado Pago.</p>
+            <p>Todos los tráficos de datos entre la aplicación móvil de Patova y nuestro servidor backend se realizan
+                bajo el protocolo seguro y cifrado HTTPS (TLS). Las suscripciones y datos de cobros son gestionados de
+                forma completamente segura directamente por las pasarelas oficiales de Mercado Pago.</p>
 
             <h3>5. Contacto</h3>
-            <p>Si tienes alguna pregunta o inquietud respecto a nuestra política de privacidad, puedes contactarnos directamente enviando un correo electrónico a <strong>soporte@patova.com.ar</strong>.</p>
+            <p>Si tienes alguna pregunta o inquietud respecto a nuestra política de privacidad, puedes contactarnos
+                directamente enviando un correo electrónico a <strong>soporte@patova.com.ar</strong>.</p>
         </div>
     </div>
 
@@ -1118,7 +1187,7 @@
         }
 
         // Close modal if user clicks outside of the modal box
-        window.onclick = function(event) {
+        window.onclick = function (event) {
             if (event.target == modal) {
                 closeModal();
             }
@@ -1165,7 +1234,7 @@
                 backendUrl = "http://127.0.0.1:8000";
             } else {
                 // Dominio de producción (modificar según corresponda)
-                backendUrl = "https://api.patova.com.ar";
+                backendUrl = "https://patova-api-253350661454.southamerica-east1.run.app";
             }
 
             form.addEventListener("submit", async (e) => {
@@ -1213,4 +1282,5 @@
         });
     </script>
 </body>
+
 </html>
