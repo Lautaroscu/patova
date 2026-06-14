@@ -25,7 +25,7 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
     from patova.core.metrics import rate_limit_hits_total
 
     rate_limit_hits_total.labels(endpoint=request.url.path).inc()
-    return await _rate_limit_exceeded_handler(request, exc)
+    return _rate_limit_exceeded_handler(request, exc)
 
 
 def setup_rate_limit(app: FastAPI) -> None:

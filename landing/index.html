@@ -707,6 +707,120 @@
                 align-items: center;
             }
         }
+
+        /* Report Section */
+        .report-section {
+            padding: 100px 0;
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+        }
+
+        .report-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .report-container h2 {
+            font-size: 36px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #FFE294 0%, var(--primary-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .report-container p.desc {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .report-form {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-gold);
+            background-color: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: #555866;
+        }
+
+        select.form-control {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+
+        .report-toast {
+            display: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 16px;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .toast-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #10b981;
+        }
+
+        .toast-error {
+            background-color: rgba(239, 110, 110, 0.1);
+            border: 1px solid rgba(239, 110, 110, 0.3);
+            color: #ef4444;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -734,8 +848,8 @@
             <h1>Protegé tus llamadas. Bloqueá el <span>Spam</span> de verdad.</h1>
             <p>Patova es la aplicación definitiva contra el spam telefónico, llamadas de telemarketing y estafas en Argentina. Usando tecnología avanzada de filtrado local y una base de datos global inteligente, Patova te devuelve el control de tu teléfono.</p>
             <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: inherit;">
-                <a href="#features" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none; color: var(--text-main);">
-                    <i class="fa-solid fa-circle-info"></i> Cómo funciona
+                <a href="#report-spam" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); box-shadow: none; color: var(--text-main);">
+                    <i class="fa-solid fa-bullhorn"></i> Denunciar Número Molesto
                 </a>
                 <a href="#premium" class="btn-premium">
                     <i class="fa-solid fa-shield-halved"></i> Ver planes de protección
@@ -818,6 +932,46 @@
                     <h3>Privacidad Absoluta (Offline-First)</h3>
                     <p>Patova respeta tu privacidad al 100%. No recopilamos tu agenda de contactos, llamadas personales ni mensajes privados. Tus datos personales son tuyos.</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de Reporte Público -->
+    <section id="report-spam" class="report-section">
+        <div class="container">
+            <div class="report-container">
+                <h2>¿Te llamó un número molesto?</h2>
+                <p class="desc">Denuncialo ahora mismo de forma anónima para alertar al resto de la comunidad Patova.</p>
+                
+                <form id="publicReportForm" class="report-form">
+                    <div class="form-group">
+                        <label for="publicReportNumber">Número de Teléfono</label>
+                        <input type="text" id="publicReportNumber" class="form-control" placeholder="Ej: +54 9 11 1234-5678" required>
+                        <span style="font-size: 11px; color: var(--text-muted);">Formatos aceptados: +54911..., 115438..., etc. Lo normalizaremos automáticamente.</span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="publicReportType">Tipo de Molestia</label>
+                        <select id="publicReportType" class="form-control">
+                            <option value="SPAM_CALL">Llamada molesta de publicidad / Spam</option>
+                            <option value="ROBOCALL">Llamada fantasma (Suena y corta / Robocall)</option>
+                            <option value="SCAM">Sospecha de estafa / Cobranzas dudosas (Vishing)</option>
+                            <option value="FRAUD">Fraude telefónico / Clonación / Suplantación</option>
+                            <option value="OTHER">Otro tipo de molestia</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="publicReportDesc">Comentarios / Qué dijeron (Opcional)</label>
+                        <textarea id="publicReportDesc" class="form-control" rows="3" placeholder="Ej: Llaman ofreciendo planes de portabilidad de manera muy insistente..." style="resize: vertical;"></textarea>
+                    </div>
+                    
+                    <button type="submit" id="publicReportBtn" class="btn-premium" style="width: 100%; justify-content: center; padding: 16px 24px; font-size: 16px; border: none; cursor: pointer; border-radius: 12px; margin-top: 10px;">
+                        <i class="fa-solid fa-bullhorn"></i> Enviar Denuncia Anónima
+                    </button>
+                </form>
+                
+                <div id="publicReportToast" class="report-toast"></div>
             </div>
         </div>
     </section>
@@ -969,6 +1123,94 @@
                 closeModal();
             }
         }
+    </script>
+
+    <script>
+        // Lógica del Formulario Público de Reportes de Spam
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("publicReportForm");
+            const numberInput = document.getElementById("publicReportNumber");
+            const typeSelect = document.getElementById("publicReportType");
+            const descTextarea = document.getElementById("publicReportDesc");
+            const submitBtn = document.getElementById("publicReportBtn");
+            const toast = document.getElementById("publicReportToast");
+
+            // Obtener o crear un device_id único persistente en el navegador
+            let deviceId = localStorage.getItem("patova_public_device_id");
+            if (!deviceId) {
+                try {
+                    deviceId = "web-client-" + self.crypto.randomUUID();
+                } catch (e) {
+                    // Fallback para navegadores antiguos
+                    deviceId = "web-client-" + Math.random().toString(36).substring(2) + Date.now().toString(36);
+                }
+                localStorage.setItem("patova_public_device_id", deviceId);
+            }
+
+            function showToast(message, isError = false) {
+                toast.textContent = message;
+                toast.className = `report-toast ${isError ? 'toast-error' : 'toast-success'}`;
+                toast.style.display = "block";
+            }
+
+            function hideToast() {
+                toast.style.display = "none";
+                toast.textContent = "";
+            }
+
+            // Determinar la URL del backend dinámicamente
+            let backendUrl = "";
+            if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+                // Desarrollo local
+                backendUrl = "http://127.0.0.1:8000";
+            } else {
+                // Dominio de producción (modificar según corresponda)
+                backendUrl = "https://api.patova.com.ar";
+            }
+
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                hideToast();
+
+                const number = numberInput.value.trim();
+                const reportType = typeSelect.value;
+                const description = descTextarea.value.trim() || null;
+
+                submitBtn.disabled = true;
+                const originalContent = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando reporte...';
+
+                try {
+                    const response = await fetch(`${backendUrl}/v1/report/public`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            number: number,
+                            device_id: deviceId,
+                            report_type: reportType,
+                            description: description
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        const errorDetail = data.detail || "Error al enviar el reporte.";
+                        showToast(`Error: ${errorDetail}`, true);
+                    } else {
+                        showToast(`¡Gracias! El número ${data.number_e164} ha sido denunciado con éxito. Reputación actualizada: ${data.new_spam_score}/100.`, false);
+                        form.reset();
+                    }
+                } catch (err) {
+                    showToast(`Error de conexión: ${err.message}`, true);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalContent;
+                }
+            });
+        });
     </script>
 </body>
 </html>

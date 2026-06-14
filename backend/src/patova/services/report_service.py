@@ -19,7 +19,8 @@ from patova.services.phone_normalization import (
 async def _get_or_create_phone(
     session: AsyncSession, normalized: str
 ) -> PhoneNumber:
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == normalized).limit(1)
+    phone_number_val = int(normalized.lstrip("+"))
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == phone_number_val).limit(1)
     result = await session.execute(stmt)
     phone = result.scalar_one_or_none()
 
@@ -39,7 +40,6 @@ async def _get_or_create_phone(
 
     phone = PhoneNumber(
         number_e164=normalized,
-        number_local=local_number,
         prefix_id=prefix_id,
         status=NumberStatus.UNVERIFIED,
         spam_score=0,
@@ -57,11 +57,13 @@ async def process_report(
     ip_hash: str | None,
 ) -> ReportResponse:
     normalized = normalize_to_e164(request.number)
+    if not normalized:
+        raise ValueError("Formato de número inválido o no soportado.")
 
     phone = await _get_or_create_phone(session, normalized)
 
     report = Report(
-        phone_number_id=phone.id,
+        phone_number=phone.phone_number,
         reporter_device_id=request.device_id,
         report_type=request.report_type,
         description=request.description,
@@ -89,8 +91,11 @@ async def process_feedback(
     request: FeedbackRequest,
 ) -> FeedbackResponse:
     normalized = normalize_to_e164(request.number)
+    if not normalized:
+        raise ValueError("Formato de número inválido o no soportado.")
 
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == normalized).limit(1)
+    phone_number_val = int(normalized.lstrip("+"))
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == phone_number_val).limit(1)
     result = await session.execute(stmt)
     phone = result.scalar_one_or_none()
 
@@ -98,7 +103,7 @@ async def process_feedback(
         phone = await _get_or_create_phone(session, normalized)
 
     event = FeedbackEvent(
-        phone_number_id=phone.id,
+        phone_number=phone.phone_number,
         reporter_device_id=request.device_id,
         feedback_type=request.feedback_type,
         related_verdict=request.related_verdict,

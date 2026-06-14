@@ -23,15 +23,18 @@ def _make_report(
     report_type: str = "SPAM_CALL",
     hours_ago: float = 0.0,
     ip_hash: str | None = None,
-    phone_number_id: str = "00000000-0000-0000-0000-000000000001",
+    phone_number: str | None = None,
+    phone_number_id: str | None = None,
 ) -> MagicMock:
+    phone_val = phone_number or phone_number_id or "00000000-0000-0000-0000-000000000001"
     r = MagicMock()
     r.reporter_device_id = device_id
     r.report_type = MagicMock()
     r.report_type.value = report_type
     r.created_at = NOW - timedelta(hours=hours_ago)
     r.ip_hash = ip_hash
-    r.phone_number_id = phone_number_id
+    r.phone_number = phone_val
+    r.phone_number_id = phone_val
     return r
 
 

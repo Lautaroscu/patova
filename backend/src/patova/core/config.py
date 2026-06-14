@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "Patova API"
     api_version: str = "v1"
     patova_api_key: str = "change-me-local-dev-key"
+    patova_admin_key: str = "change-me-local-admin-key"
     log_level: str = "INFO"
     database_url: str = "postgresql+asyncpg://patova:patova@localhost:5432/patova"
     redis_url: str = "redis://localhost:6379/0"

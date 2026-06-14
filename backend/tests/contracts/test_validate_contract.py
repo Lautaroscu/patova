@@ -73,7 +73,7 @@ class TestValidateContract:
         response = await client.post(
             "/v1/validate",
             json={
-                "number": "+541199988877",
+                "number": "+549999999999",
                 "device_id": "contract-test-null",
                 "call_direction": "INCOMING",
             },

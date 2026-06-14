@@ -7,11 +7,11 @@ from sqlalchemy import func, literal_column, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from numguard.db.session import _get_async_sessionmaker
-from numguard.models.area_prefix import AreaPrefix
-from numguard.models.enums import NumberSource, NumberStatus
-from numguard.models.phone_number import PhoneNumber
-from numguard.services.phone_normalization import extract_argentina_prefix, hash_for_log, normalize_to_e164
+from patova.db.session import _get_async_sessionmaker
+from patova.models.area_prefix import AreaPrefix
+from patova.models.enums import NumberSource, NumberStatus
+from patova.models.phone_number import PhoneNumber
+from patova.services.phone_normalization import extract_argentina_prefix, hash_for_log, normalize_to_e164
 
 app = typer.Typer(help="NumGuard seed data import CLI")
 
@@ -147,8 +147,7 @@ async def _upsert_numbers(
                         report_count = 0
 
                     stmt = pg_insert(PhoneNumber).values(
-                        number_e164=normalized,
-                        number_local=local_number,
+                        phone_number=int(normalized.lstrip("+")),
                         prefix_id=prefix_id,
                         status=status,
                         spam_score=spam_score,
@@ -157,7 +156,7 @@ async def _upsert_numbers(
                         metadata_=extra_meta,
                     )
                     stmt = stmt.on_conflict_do_update(
-                        index_elements=["number_e164"],
+                        index_elements=["phone_number"],
                         set_={
                             "status": stmt.excluded.status,
                             "spam_score": stmt.excluded.spam_score,

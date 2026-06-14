@@ -1,37 +1,32 @@
 package ar.com.patova.domain.heuristics
 
-import ar.com.patova.data.local.CachedValidationDao
 import ar.com.patova.data.local.CallEventDao
 import ar.com.patova.data.local.CallEventEntity
-import io.mockk.every
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.DisplayName
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
 import kotlin.system.measureTimeMillis
 
-@ExtendWith(MockKExtension::class)
 class LocalHeuristicsEngineTest {
 
-    @MockK
-    lateinit var callEventDao: CallEventDao
-
-    @MockK
-    lateinit var cachedValidationDao: CachedValidationDao
+    private val fakeCallEventDao = object : CallEventDao {
+        override fun getAllFlow() = kotlinx.coroutines.flow.flowOf(emptyList<CallEventEntity>())
+        override suspend fun getEventsSince(sinceMillis: Long) = emptyList<CallEventEntity>()
+        override suspend fun insert(entity: CallEventEntity) {}
+        override suspend fun getById(id: String) = null
+        override suspend fun markFeedbackSynced(id: String) {}
+        override suspend fun getRecentCallsByHash(phoneHash: String, sinceMillis: Long) = emptyList<CallEventEntity>()
+    }
 
     private lateinit var engine: LocalHeuristicsEngine
 
-    @BeforeEach
+    @Before
     fun setup() {
-        engine = LocalHeuristicsEngine(callEventDao)
+        engine = LocalHeuristicsEngine(fakeCallEventDao)
     }
 
     @Test
-    @DisplayName("Safe number: no flags, no block")
     fun testSafeNumberNoFlags() {
         val result = engine.evaluate("+541112345678", emptyList())
         assertTrue(result.flags.isEmpty())
@@ -40,7 +35,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Prefix match triggers TELEMARKETING_PREFIX_MATCH flag")
     fun testTelemarketingPrefixMatch() {
         val result = engine.evaluate("+54115701123456", emptyList())
         assertTrue(HeuristicFlag.TELEMARKETING_PREFIX_MATCH in result.flags)
@@ -48,7 +42,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Burst of unknown calls triggers HIGH_CALL_FREQUENCY_BURST")
     fun testCallBurstDetected() {
         val now = System.currentTimeMillis()
         val recentCalls = (1..5).map { i ->
@@ -70,7 +63,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("No burst when calls are old")
     fun testNoBurstWithOldCalls() {
         val now = System.currentTimeMillis()
         val recentCalls = (1..5).map { i ->
@@ -91,7 +83,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Burst not triggered when calls have known verdicts")
     fun testBurstIgnoresKnownCalls() {
         val now = System.currentTimeMillis()
         val recentCalls = (1..5).map { i ->
@@ -112,7 +103,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Sequential number pattern detected")
     fun testSequentialPatternDetected() {
         val recentCalls = listOf(
             callEvent("+541112345671", verdict = "UNKNOWN"),
@@ -126,7 +116,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Non-sequential numbers do NOT trigger sequential flag")
     fun testNonSequentialDoesNotTrigger() {
         val recentCalls = listOf(
             callEvent("+541112345671", verdict = "UNKNOWN"),
@@ -138,7 +127,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Temporary number pattern: all same digits in subscriber")
     fun testTemporaryNumberAllSameDigits() {
         val result = engine.evaluate("+54112222222", emptyList())
         assertTrue(HeuristicFlag.TEMPORARY_NUMBER_PATTERN in result.flags)
@@ -147,14 +135,12 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Normal subscriber digits do NOT trigger temporary flag")
     fun testNormalSubscriberNoTemporaryFlag() {
         val result = engine.evaluate("+541112345678", emptyList())
         assertFalse(HeuristicFlag.TEMPORARY_NUMBER_PATTERN in result.flags)
     }
 
     @Test
-    @DisplayName("Combined flags produce correct score")
     fun testCombinedFlagsScore() {
         val recentCalls = listOf(
             callEvent("+5411525212345", verdict = "UNKNOWN"),
@@ -166,7 +152,6 @@ class LocalHeuristicsEngineTest {
     }
 
     @Test
-    @DisplayName("Offline latency under 50ms")
     fun testLatencyUnder50ms() {
         val elapsed = measureTimeMillis {
             repeat(100) {
@@ -181,11 +166,10 @@ class LocalHeuristicsEngineTest {
             }
         }
         val avgMs = elapsed / 100.0
-        assertTrue(avgMs < 50.0, "Average latency ${avgMs}ms exceeded 50ms threshold")
+        assertTrue("Average latency ${avgMs}ms exceeded 50ms threshold", avgMs < 50.0)
     }
 
     @Test
-    @DisplayName("Empty call history still evaluates correctly")
     fun testEmptyHistoryProducesValidResult() {
         val result = engine.evaluate("+5411525212345", emptyList())
         assertTrue(result.score >= 0.0)

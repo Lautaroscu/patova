@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 
 from ..deps import verify_api_key
+from .admin import router as admin_v1_router
 from .config import router as config_router
+from .downloads import router as downloads_router
 from .feedback import router as feedback_router
 from .health import router as health_router
 from .payments import router as payments_router
@@ -21,6 +23,8 @@ router.include_router(sync_router)
 router.include_router(spam_router, prefix="/spam", tags=["spam-intel"])
 router.include_router(config_router, prefix="/config", tags=["config"])
 router.include_router(payments_router)
+router.include_router(admin_v1_router, prefix="/admin", tags=["admin"])
+router.include_router(downloads_router, prefix="/downloads", tags=["downloads"])
 
 
 @router.get("/protected-ping")

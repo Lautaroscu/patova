@@ -17,6 +17,27 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
+open class FakePatovaApi : PatovaApi {
+    override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "ALLOW")
+    override suspend fun report(request: ReportRequest) = ReportResponse()
+    override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
+    override suspend fun getConfig(deviceId: String) = ar.com.patova.data.api.DeviceConfigResponse(deviceId, false, emptyList(), emptyList())
+    override suspend fun updateConfig(deviceId: String, request: ar.com.patova.data.api.DeviceConfigRequest) = ar.com.patova.data.api.DeviceConfigResponse(deviceId, false, emptyList(), emptyList())
+    override suspend fun createPreference(request: ar.com.patova.data.api.CreatePreferenceRequest) = ar.com.patova.data.api.CreatePreferenceResponse("", "", "")
+    override suspend fun getSubscriptionMe(userId: String) = ar.com.patova.data.api.SubscriptionMeResponse(userId, false, null)
+    override suspend fun sync(request: ar.com.patova.data.api.SyncRequest) = ar.com.patova.data.api.SyncResponse("", "", emptyList(), emptyList())
+    override suspend fun getStats() = ar.com.patova.data.api.StatsResponse(0, 0, 0, emptyList())
+}
+
+open class FakeCallEventDao : CallEventDao {
+    override fun getAllFlow() = flowOf(emptyList<CallEventEntity>())
+    override suspend fun insert(entity: CallEventEntity) {}
+    override suspend fun getById(id: String): CallEventEntity? = null
+    override suspend fun markFeedbackSynced(id: String) {}
+    override suspend fun getRecentCallsByHash(phoneHash: String, sinceMillis: Long): List<CallEventEntity> = emptyList()
+    override suspend fun getEventsSince(sinceMillis: Long): List<CallEventEntity> = emptyList()
+}
+
 class ValidateIncomingCallUseCaseTest {
 
     private val testHash = PhoneHashing.sha256("+541112345678")
@@ -33,13 +54,11 @@ class ValidateIncomingCallUseCaseTest {
     fun `cache hit returns cached verdict without calling API`() = runTest {
         var apiCallCount = 0
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse {
                 apiCallCount++
                 return ValidateResponse(verdict = "BLOCK")
             }
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val fakeDao = object : CachedValidationDao {
@@ -66,7 +85,7 @@ class ValidateIncomingCallUseCaseTest {
             override fun getDeviceIdHash(): String = "test-device-hash"
         }
 
-        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeDao, fakeDeviceId, fakeEmptyCallEventDao())
+        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeDao, fakeDeviceId, FakeCallEventDao())
         val verdict = useCase.decide("+541112345678")
 
         assertEquals(0, apiCallCount)
@@ -77,13 +96,11 @@ class ValidateIncomingCallUseCaseTest {
     fun `expired cache calls API`() = runTest {
         var apiCallCount = 0
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse {
                 apiCallCount++
                 return ValidateResponse(verdict = "ALLOW")
             }
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val fakeDao = object : CachedValidationDao {
@@ -110,7 +127,7 @@ class ValidateIncomingCallUseCaseTest {
             override fun getDeviceIdHash(): String = "test-device-hash"
         }
 
-        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeDao, fakeDeviceId, fakeEmptyCallEventDao())
+        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeDao, fakeDeviceId, FakeCallEventDao())
         val verdict = useCase.decide("+541112345678")
 
         assertEquals(1, apiCallCount)
@@ -119,14 +136,12 @@ class ValidateIncomingCallUseCaseTest {
 
     @Test
     fun `API BLOCK verdict produces block decision`() = runTest {
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse =
                 ValidateResponse(verdict = "BLOCK")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
-        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeEmptyDao(), fakeDeviceId(), fakeEmptyCallEventDao())
+        val useCase = ValidateIncomingCallUseCase(fakeApi, fakeEmptyDao(), fakeDeviceId(), FakeCallEventDao())
         val verdict = useCase.decide("+541112345678")
 
         assertEquals("BLOCK", verdict)
@@ -134,15 +149,13 @@ class ValidateIncomingCallUseCaseTest {
 
     @Test
     fun `API INVALID_PREFIX verdict produces block decision`() = runTest {
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse =
                 ValidateResponse(verdict = "INVALID_PREFIX")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val useCase = ValidateIncomingCallUseCase(
-            fakeApi, fakeEmptyDao(), fakeDeviceId(), fakeEmptyCallEventDao()
+            fakeApi, fakeEmptyDao(), fakeDeviceId(), FakeCallEventDao()
         )
         val verdict = useCase.decide("+5492611234567")
 
@@ -151,16 +164,14 @@ class ValidateIncomingCallUseCaseTest {
 
     @Test
     fun `API error produces allow decision`() = runTest {
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse {
                 throw java.io.IOException("network failure")
             }
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val useCase = ValidateIncomingCallUseCase(
-            fakeApi, fakeEmptyDao(), fakeDeviceId(), fakeEmptyCallEventDao()
+            fakeApi, fakeEmptyDao(), fakeDeviceId(), FakeCallEventDao()
         )
         val verdict = useCase.decide("+541112345678")
 
@@ -169,17 +180,15 @@ class ValidateIncomingCallUseCaseTest {
 
     @Test
     fun `API timeout produces allow decision`() = runTest {
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse {
                 kotlinx.coroutines.delay(5000L)
                 return ValidateResponse(verdict = "BLOCK")
             }
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val useCase = ValidateIncomingCallUseCase(
-            fakeApi, fakeEmptyDao(), fakeDeviceId(), fakeEmptyCallEventDao()
+            fakeApi, fakeEmptyDao(), fakeDeviceId(), FakeCallEventDao()
         )
         val verdict = useCase.decide("+541112345678")
 
@@ -188,15 +197,13 @@ class ValidateIncomingCallUseCaseTest {
 
     @Test
     fun `API SUSPECT produces SUSPECT verdict`() = runTest {
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse =
                 ValidateResponse(verdict = "SUSPECT")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val useCase = ValidateIncomingCallUseCase(
-            fakeApi, fakeEmptyDao(), fakeDeviceId(), fakeEmptyCallEventDao()
+            fakeApi, fakeEmptyDao(), fakeDeviceId(), FakeCallEventDao()
         )
         val verdict = useCase.decide("+541112345678")
 
@@ -211,12 +218,5 @@ class ValidateIncomingCallUseCaseTest {
 
     private fun fakeDeviceId() = object : DeviceIdProvider {
         override fun getDeviceIdHash(): String = "test-device-hash"
-    }
-
-    private fun fakeEmptyCallEventDao() = object : CallEventDao {
-        override fun getAllFlow() = flowOf(emptyList<CallEventEntity>())
-        override suspend fun insert(entity: CallEventEntity) {}
-        override suspend fun getById(id: String): CallEventEntity? = null
-        override suspend fun markFeedbackSynced(id: String) {}
     }
 }

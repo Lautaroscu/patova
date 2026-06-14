@@ -162,7 +162,7 @@ class LocalHeuristicsEngine @Inject constructor(
     private fun extractNationalPrefix(number: String): String? {
         val digits = number.filter { it.isDigit() }
         val local = if (digits.startsWith("54") && digits.length >= 5) {
-            digits.drop(2)
+            "0" + digits.drop(2)
         } else if (digits.length >= 4) {
             digits
         } else {

@@ -26,8 +26,9 @@ def recalculate_spam_score(number_e164: str):
     async def _recalculate():
         sessionmaker = _get_async_sessionmaker()
         async with sessionmaker() as session:
+            phone_number_val = int(number_e164.lstrip("+"))
             stmt = select(PhoneNumber).where(
-                PhoneNumber.number_e164 == number_e164
+                PhoneNumber.phone_number == phone_number_val
             ).limit(1)
             result = await session.execute(stmt)
             phone = result.scalar_one_or_none()
@@ -36,7 +37,7 @@ def recalculate_spam_score(number_e164: str):
 
             recent_stmt = (
                 select(Report)
-                .where(Report.phone_number_id == phone.id)
+                .where(Report.phone_number == phone.phone_number)
                 .order_by(Report.created_at.desc())
                 .limit(500)
             )
@@ -48,7 +49,7 @@ def recalculate_spam_score(number_e164: str):
 
             feedback_stmt = (
                 select(FeedbackEvent)
-                .where(FeedbackEvent.phone_number_id == phone.id)
+                .where(FeedbackEvent.phone_number == phone.phone_number)
             )
             feedback_result = await session.execute(feedback_stmt)
             for event in feedback_result.scalars().all():

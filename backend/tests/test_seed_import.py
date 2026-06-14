@@ -62,7 +62,7 @@ async def test_import_clean_numbers(session: AsyncSession):
     )
     assert "Numbers:" in result.stdout, result.stderr
 
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == "+541112345678")
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345678)
     row = (await session.execute(stmt)).scalar_one_or_none()
     assert row is not None
     assert row.status == NumberStatus.CLEAN
@@ -84,7 +84,7 @@ async def test_import_spam_numbers(session: AsyncSession):
     )
     assert "Numbers:" in result.stdout, result.stderr
 
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == "+541199999999")
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 541199999999)
     row = (await session.execute(stmt)).scalar_one_or_none()
     assert row is not None
     assert row.status == NumberStatus.SPAM
@@ -114,7 +114,7 @@ async def test_idempotent_number_import(session: AsyncSession):
     _run_seed_command("import-numbers", "--file", numbers_file, "--default-status", "CLEAN")
     _run_seed_command("import-numbers", "--file", numbers_file, "--default-status", "CLEAN")
 
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == "+541112345678")
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345678)
     result = await session.execute(stmt)
     rows = result.scalars().all()
     assert len(rows) == 1

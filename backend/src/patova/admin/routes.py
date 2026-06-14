@@ -5,7 +5,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from patova.api.deps import verify_api_key
+from patova.api.deps import verify_admin_basic
+from patova.core.config import get_settings
 from patova.db.session import get_session
 from patova.services.stats_service import get_stats
 
@@ -19,9 +20,11 @@ templates = Jinja2Templates(directory=_TEMPLATES_DIR)
 async def admin_dashboard(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _api_key: str = Depends(verify_api_key),
+    _admin: str = Depends(verify_admin_basic),
 ):
+
     data = await get_stats(session)
+    data["api_key"] = get_settings().patova_admin_key
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",

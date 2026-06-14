@@ -31,8 +31,8 @@ class LocalChanges(BaseModel):
 
 class SyncRequest(BaseModel):
     user_id: str = Field(..., min_length=1, max_length=256)
-    client_last_sync_timestamp: datetime
-    local_changes: LocalChanges
+    client_last_sync_timestamp: datetime | None = None
+    local_changes: LocalChanges | None = None
 
 
 class CanonicalPreferences(BaseModel):

@@ -24,24 +24,42 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+open class FakePatovaApi : PatovaApi {
+    override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "ALLOW")
+    override suspend fun report(request: ReportRequest) = ReportResponse()
+    override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
+    override suspend fun getConfig(deviceId: String) = ar.com.patova.data.api.DeviceConfigResponse(deviceId, false, emptyList(), emptyList())
+    override suspend fun updateConfig(deviceId: String, request: ar.com.patova.data.api.DeviceConfigRequest) = ar.com.patova.data.api.DeviceConfigResponse(deviceId, false, emptyList(), emptyList())
+    override suspend fun createPreference(request: ar.com.patova.data.api.CreatePreferenceRequest) = ar.com.patova.data.api.CreatePreferenceResponse("", "", "")
+    override suspend fun getSubscriptionMe(userId: String) = ar.com.patova.data.api.SubscriptionMeResponse(userId, false, null)
+    override suspend fun sync(request: ar.com.patova.data.api.SyncRequest) = ar.com.patova.data.api.SyncResponse("", "", emptyList(), emptyList())
+    override suspend fun getStats() = ar.com.patova.data.api.StatsResponse(0, 0, 0, emptyList())
+}
+
+open class FakeCallEventDao : CallEventDao {
+    override fun getAllFlow() = flowOf(emptyList<CallEventEntity>())
+    override suspend fun insert(entity: CallEventEntity) {}
+    override suspend fun getById(id: String): CallEventEntity? = null
+    override suspend fun markFeedbackSynced(id: String) {}
+    override suspend fun getRecentCallsByHash(phoneHash: String, sinceMillis: Long): List<CallEventEntity> = emptyList()
+    override suspend fun getEventsSince(sinceMillis: Long): List<CallEventEntity> = emptyList()
+}
+
 class HistoryViewModelTest {
 
     @Test
     fun `events are stored with masked number after block`() = runTest {
         val savedEvents = mutableListOf<CallEventEntity>()
 
-        val callEventDao = object : CallEventDao {
+        val callEventDao = object : FakeCallEventDao() {
             override fun getAllFlow() = flowOf(savedEvents.toList())
             override suspend fun insert(entity: CallEventEntity) { savedEvents.add(entity) }
             override suspend fun getById(id: String) = savedEvents.find { it.id == id }
-            override suspend fun markFeedbackSynced(id: String) {}
         }
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest) =
                 ValidateResponse(verdict = "BLOCK", spamScore = 92, reason = "reported spam")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val fakeDao = object : CachedValidationDao {
@@ -79,9 +97,8 @@ class HistoryViewModelTest {
             )
         )
 
-        val callEventDao = object : CallEventDao {
+        val callEventDao = object : FakeCallEventDao() {
             override fun getAllFlow() = flowOf(events.toList())
-            override suspend fun insert(entity: CallEventEntity) {}
             override suspend fun getById(id: String) = events.find { it.id == id }
             override suspend fun markFeedbackSynced(id: String) {
                 val idx = events.indexOfFirst { it.id == id }
@@ -89,9 +106,8 @@ class HistoryViewModelTest {
             }
         }
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "BLOCK")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
             override suspend fun feedback(request: FeedbackRequest): FeedbackResponse {
                 assertEquals("FALSE_POSITIVE", request.feedbackType)
                 assertEquals("h1", request.numberHash)
@@ -123,19 +139,16 @@ class HistoryViewModelTest {
     fun `failed verification event is saved as FAILED_OPEN`() = runTest {
         val savedEvents = mutableListOf<CallEventEntity>()
 
-        val callEventDao = object : CallEventDao {
+        val callEventDao = object : FakeCallEventDao() {
             override fun getAllFlow() = flowOf(savedEvents.toList())
             override suspend fun insert(entity: CallEventEntity) { savedEvents.add(entity) }
             override suspend fun getById(id: String) = savedEvents.find { it.id == id }
-            override suspend fun markFeedbackSynced(id: String) {}
         }
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest): ValidateResponse {
                 throw java.io.IOException("timeout")
             }
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val fakeDao = object : CachedValidationDao {
@@ -162,12 +175,11 @@ class HistoryViewModelTest {
     fun `report offline saves as pending with correct type`() = runTest {
         val pendingStore = mutableListOf<PendingReportEntity>()
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "UNKNOWN")
             override suspend fun report(request: ReportRequest): ReportResponse {
                 throw java.io.IOException("offline")
             }
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val pendingDao = object : PendingReportDao {

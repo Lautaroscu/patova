@@ -3,64 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patova Admin</title>
+    <title>Patova — Panel Administrativo</title>
     <link rel="stylesheet" href="/admin/static/admin.css">
+    <style>
+        /* ── Mejoras inline para las secciones nuevas ── */
+        .import-zone {
+            border: 2px dashed var(--border-color, #334155);
+            border-radius: 8px;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+            position: relative;
+        }
+        .import-zone:hover, .import-zone.dragover {
+            border-color: #3b82f6;
+            background: rgba(59,130,246,.06);
+        }
+        .import-zone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+        }
+        .import-zone-label { font-size: .85rem; color: #94a3b8; pointer-events: none; }
+        .import-zone-label strong { color: #e2e8f0; }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 99px;
+            font-size: .75rem; font-weight: 600; letter-spacing: .3px;
+        }
+        .badge-spam { background: #7f1d1d; color: #fca5a5; }
+        .badge-seed { background: #1e3a5f; color: #93c5fd; }
+        .badge-crowd { background: #3b1f5e; color: #d8b4fe; }
+        .badge-pred { background: #1c3d26; color: #86efac; }
+        .result-box {
+            background: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
+            padding: 1rem; font-family: monospace; font-size: .82rem;
+            white-space: pre-wrap; word-break: break-all; color: #94a3b8;
+            max-height: 180px; overflow-y: auto; margin-top: .75rem;
+        }
+        .section-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+        table th, table td { white-space: nowrap; }
+    </style>
 </head>
 <body>
     <header>
         <h1>Patova Admin</h1>
-        <span class="version">MVP v1</span>
+        <span class="version">Panel de Control · {{ api_version | default('v1') }}</span>
     </header>
 
     <main>
+        <!-- ── Métricas ── -->
         <section class="cards">
             <div class="card">
-                <h3>Total Numbers</h3>
+                <h3>Total de Números</h3>
                 <p class="value">{{ total_numbers | default(0) }}</p>
             </div>
             <div class="card">
-                <h3>Total Reports</h3>
+                <h3>Total de Reportes</h3>
                 <p class="value">{{ total_reports | default(0) }}</p>
             </div>
             <div class="card">
-                <h3>Blocked Today</h3>
+                <h3>Bloqueados Hoy</h3>
                 <p class="value blocked">{{ blocked_today | default(0) }}</p>
             </div>
         </section>
 
-        <section class="table-section">
-            <h2>Top Reported Numbers</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Number</th>
-                        <th>Score</th>
-                        <th>Reports</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if top_reported %}
-                    {% for item in top_reported %}
-                    <tr>
-                        <td>{{ item.number_e164_masked }}</td>
-                        <td>{{ item.spam_score }}</td>
-                        <td>{{ item.report_count }}</td>
-                        <td class="status-{{ item.status | lower }}">{{ item.status }}</td>
-                    </tr>
-                    {% endfor %}
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="empty">No reported numbers yet</td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </section>
+        <div class="dashboard-grid">
+            <!-- ── Panel de Control ── -->
+            <aside class="controls-panel">
+                <div class="card">
+                    <h2>Panel de Control</h2>
+                    <p class="section-desc">Acciones administrativas del sistema</p>
+
+                    <!-- API Key (auto-filled desde el servidor) -->
+                    <div class="input-group">
+                        <label for="apiKey">API Key</label>
+                        <div class="input-with-action">
+                            <input type="password" id="apiKey" value="{{ api_key }}" autocomplete="off" readonly
+                                   style="opacity:.6;cursor:default;">
+                            <button type="button" id="toggleKeyBtn" class="action-btn-mini" title="Mostrar/Ocultar">👁️</button>
+                        </div>
+                        <span class="help-text">✓ Autenticado — la key se inyecta automáticamente desde la sesión.</span>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Sembrar número individual -->
+                    <form id="seedForm">
+                        <div class="input-group">
+                            <label for="seedNumber">Número Semilla (SPAM)</label>
+                            <input type="text" id="seedNumber" placeholder="Ej: +5491112345678" required>
+                            <span class="help-text">Expande predictivamente un bloque de 1.000 números alrededor de la semilla.</span>
+                        </div>
+                        <button type="submit" id="seedSubmitBtn" class="btn btn-primary">Bloquear Rango</button>
+                    </form>
+
+                    <hr class="divider">
+
+                    <!-- Importar CSV -->
+                    <div>
+                        <label>Importación Masiva desde CSV</label>
+                        <p class="help-text" style="margin-bottom:.5rem">
+                            El CSV debe tener una columna <code>numero_e164</code>, o bien un número por línea.<br>
+                            Cada número genera un bloque de 1.000. Límite: 500 semillas por carga.
+                        </p>
+                        <div class="import-zone" id="importZone">
+                            <input type="file" id="csvFileInput" accept=".csv,.txt">
+                            <div class="import-zone-label">
+                                <strong>Arrastrá el CSV aquí</strong><br>o hacé clic para seleccionarlo
+                            </div>
+                        </div>
+                        <div class="section-actions">
+                            <button id="importBtn" class="btn btn-primary" disabled>⬆ Importar CSV</button>
+                        </div>
+                        <div id="importResult" class="result-box" style="display:none"></div>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Mantenimiento -->
+                    <div class="action-group">
+                        <label>Mantenimiento</label>
+                        <button id="pruneBtn" class="btn btn-secondary">Purgar Predictivos Antiguos</button>
+                        <span class="help-text">Elimina números predictivos de más de 6 meses sin hits acumulados.</span>
+                    </div>
+
+                    <hr class="divider">
+
+                    <!-- Exportar CSV -->
+                    <div class="action-group">
+                        <label>Exportar Base de Spam</label>
+                        <button id="exportBtn" class="btn btn-secondary">⬇ Descargar CSV</button>
+                        <span class="help-text">Descarga todos los números marcados como SPAM en formato CSV.</span>
+                    </div>
+
+                    <div id="alertBox" class="alert hidden"></div>
+                </div>
+            </aside>
+
+            <!-- ── Tabla de números más reportados ── -->
+            <section class="table-section">
+                <h2>Top 10 Números Más Reportados</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Número E.164</th>
+                                <th>Score</th>
+                                <th>Reportes</th>
+                                <th>Estado</th>
+                                <th>Fuente</th>
+                                <th>Predictivo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if top_reported %}
+                            {% for item in top_reported %}
+                            <tr>
+                                <td><code>{{ item.number_e164 }}</code></td>
+                                <td><strong>{{ item.spam_score }}</strong></td>
+                                <td>{{ item.report_count }}</td>
+                                <td class="status-{{ item.status | lower }}">{{ item.status }}</td>
+                                <td>{{ item.source }}</td>
+                                <td>{{ '✓' if item.is_predicted else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="empty">Todavía no hay números reportados.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
     </main>
 
     <footer>
-        <p>Patova &mdash; Admin Panel &mdash; {{ api_version | default('v1') }}</p>
+        <p>Patova &mdash; Panel Administrativo &mdash; {{ api_version | default('v1') }}</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const apiKeyInput    = document.getElementById('apiKey');
+            const toggleKeyBtn   = document.getElementById('toggleKeyBtn');
+            const seedForm       = document.getElementById('seedForm');
+            const seedNumberInput= document.getElementById('seedNumber');
+            const seedSubmitBtn  = document.getElementById('seedSubmitBtn');
+            const pruneBtn       = document.getElementById('pruneBtn');
+            const exportBtn      = document.getElementById('exportBtn');
+            const importZone     = document.getElementById('importZone');
+            const csvFileInput   = document.getElementById('csvFileInput');
+            const importBtn      = document.getElementById('importBtn');
+            const importResult   = document.getElementById('importResult');
+            const alertBox       = document.getElementById('alertBox');
+
+            // ── API Key: ya viene pre-cargada desde el servidor (readonly) ────
+            toggleKeyBtn.addEventListener('click', () => {
+                const hidden = apiKeyInput.type === 'password';
+                apiKeyInput.type = hidden ? 'text' : 'password';
+                toggleKeyBtn.textContent = hidden ? '🙈' : '👁️';
+            });
+
+            // ── Utilidades de alerta ──────────────────────────────────────────
+            function showAlert(message, type = 'success') {
+                alertBox.className = `alert alert-${type}`;
+                alertBox.textContent = message;
+                alertBox.classList.remove('hidden');
+                alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            function clearAlert() {
+                alertBox.className = 'alert hidden';
+                alertBox.textContent = '';
+            }
+            function getApiKey() {
+                const key = apiKeyInput.value.trim();
+                if (!key) { showAlert('Error: debe ingresar la API Key para autenticarse.', 'error'); return null; }
+                return key;
+            }
+
+            // ── Sembrar número individual ─────────────────────────────────────
+            seedForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+                const apiKey = getApiKey();
+                if (!apiKey) return;
+
+                seedSubmitBtn.disabled = true;
+                const orig = seedSubmitBtn.textContent;
+                seedSubmitBtn.textContent = 'Procesando...';
+
+                try {
+                    const res = await fetch('/v1/admin/seed-range', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Patova-Key': apiKey },
+                        body: JSON.stringify({ seed_number: seedNumberInput.value.trim() })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showAlert(`Error: ${data.detail || 'Error al procesar el rango.'}`, 'error');
+                    } else {
+                        showAlert(
+                            `✓ Semilla ${data.seed_procesado} procesada. Bloque base: ${data.bloque_base_calculado}. `
+                            + `Nuevos registros: ${data.registros_bd_impactados}.`,
+                            'success'
+                        );
+                        seedNumberInput.value = '';
+                        setTimeout(() => location.reload(), 2500);
+                    }
+                } catch (err) {
+                    showAlert(`Error de conexión: ${err.message}`, 'error');
+                } finally {
+                    seedSubmitBtn.disabled = false;
+                    seedSubmitBtn.textContent = orig;
+                }
+            });
+
+            // ── Purgar predictivos ────────────────────────────────────────────
+            pruneBtn.addEventListener('click', async () => {
+                clearAlert();
+                const apiKey = getApiKey();
+                if (!apiKey) return;
+                if (!confirm('¿Confirmar purga de números predictivos de más de 6 meses sin hits?')) return;
+
+                pruneBtn.disabled = true;
+                const orig = pruneBtn.textContent;
+                pruneBtn.textContent = 'Purgando...';
+
+                try {
+                    const res = await fetch('/v1/admin/prune', {
+                        method: 'POST',
+                        headers: { 'X-Patova-Key': apiKey }
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showAlert(`Error: ${data.detail || 'Error al purgar.'}`, 'error');
+                    } else {
+                        showAlert(`✓ Purgado exitoso. ${data.registros_purgados} registros eliminados.`, 'success');
+                        setTimeout(() => location.reload(), 2500);
+                    }
+                } catch (err) {
+                    showAlert(`Error de conexión: ${err.message}`, 'error');
+                } finally {
+                    pruneBtn.disabled = false;
+                    pruneBtn.textContent = orig;
+                }
+            });
+
+            // ── Exportar CSV ──────────────────────────────────────────────────
+            exportBtn.addEventListener('click', async () => {
+                clearAlert();
+                const apiKey = getApiKey();
+                if (!apiKey) return;
+
+                exportBtn.disabled = true;
+                exportBtn.textContent = 'Generando CSV...';
+
+                try {
+                    const res = await fetch('/v1/admin/export', {
+                        headers: { 'X-Patova-Key': apiKey }
+                    });
+                    if (!res.ok) {
+                        const data = await res.json();
+                        showAlert(`Error: ${data.detail || 'Error al exportar.'}`, 'error');
+                        return;
+                    }
+                    // Disparar descarga
+                    const blob = await res.blob();
+                    const url  = URL.createObjectURL(blob);
+                    const a    = document.createElement('a');
+                    a.href     = url;
+                    a.download = 'patova_spam_export.csv';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } catch (err) {
+                    showAlert(`Error de conexión: ${err.message}`, 'error');
+                } finally {
+                    exportBtn.disabled = false;
+                    exportBtn.textContent = '⬇ Descargar CSV';
+                }
+            });
+
+            // ── Importar CSV: drag & drop + selector ──────────────────────────
+            importZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                importZone.classList.add('dragover');
+            });
+            importZone.addEventListener('dragleave', () => importZone.classList.remove('dragover'));
+            importZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                importZone.classList.remove('dragover');
+                const f = e.dataTransfer.files[0];
+                if (f) handleFileSelected(f);
+            });
+
+            csvFileInput.addEventListener('change', () => {
+                if (csvFileInput.files[0]) handleFileSelected(csvFileInput.files[0]);
+            });
+
+            let selectedFile = null;
+            function handleFileSelected(file) {
+                selectedFile = file;
+                importZone.querySelector('.import-zone-label').innerHTML =
+                    `<strong>${file.name}</strong><br>${(file.size / 1024).toFixed(1)} KB`;
+                importBtn.disabled = false;
+            }
+
+            importBtn.addEventListener('click', async () => {
+                clearAlert();
+                const apiKey = getApiKey();
+                if (!apiKey || !selectedFile) return;
+
+                importBtn.disabled = true;
+                const orig = importBtn.textContent;
+                importBtn.textContent = 'Importando...';
+                importResult.style.display = 'none';
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                try {
+                    const res = await fetch('/v1/admin/import-csv', {
+                        method: 'POST',
+                        headers: { 'X-Patova-Key': apiKey },
+                        body: formData,
+                    });
+                    const data = await res.json();
+                    importResult.style.display = 'block';
+
+                    if (!res.ok) {
+                        importResult.textContent = `ERROR: ${data.detail || JSON.stringify(data)}`;
+                        importResult.style.color = '#f87171';
+                    } else {
+                        importResult.style.color = '#86efac';
+                        importResult.textContent =
+                            `✓ Importación exitosa\n`
+                            + `Semillas procesadas:      ${data.semillas_procesadas}\n`
+                            + `Registros expandidos:     ${data.registros_expandidos}\n`
+                            + `Registros nuevos en BD:   ${data.registros_nuevos_en_bd}\n`
+                            + (data.errores_de_formato?.length
+                                ? `Errores de formato (${data.errores_de_formato.length}): ${data.errores_de_formato.slice(0,5).join(', ')}…`
+                                : 'Sin errores de formato.');
+                        setTimeout(() => location.reload(), 3000);
+                    }
+                } catch (err) {
+                    importResult.style.display = 'block';
+                    importResult.textContent = `Error de conexión: ${err.message}`;
+                    importResult.style.color = '#f87171';
+                } finally {
+                    importBtn.disabled = false;
+                    importBtn.textContent = orig;
+                }
+            });
+        });
+    </script>
 </body>
 </html>

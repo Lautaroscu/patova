@@ -1,0 +1,11 @@
+Hide these hints with HOMEBREW_NO_ENV_HINTS=1 (see man brew).
+==> Fetching downloads for: xcodegen
+✔︎ API Source xcodegen.rb                                                                    Verified      1.8KB/  1.8KB
+xcodegen: A full installation of Xcode.app 15.3 is required to compile
+this software. Installing just the Command Line Tools is not sufficient.
+
+Xcode 15.3 cannot be installed on macOS 11.
+You must upgrade your version of macOS.
+Error: xcodegen: An unsatisfied requirement failed this build.
+ulisesfuhr@MacBook-Pro patova % cd ios && xcodegen generate
+zsh: command not found: xcodegen

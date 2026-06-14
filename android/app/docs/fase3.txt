@@ -1,0 +1,56 @@
+ESPECIFICACIÓN TÉCNICA: FASE 3 - ENDPOINTS DE LA API, PERSISTENCIA EN LOTE Y COMPRESIÓN PARA CALLKITObjetivo de la FaseImplementar los controladores de FastAPI (src/api/v1/endpoints/) para recibir reportes masivos desde Android de manera eficiente, exponer la funcionalidad de seeding manual para tu panel UX/UI y servir la lista negra optimizada y comprimida para iOS.Tareas Específicas para el Agente1. Endpoint de Reporte Masivo Android (POST /api/v1/reports/batch)Propósito: Recibir los lotes periódicos de números bloqueados localmente por la heurística de los clientes Android para alimentar la base colectiva.  Lógica: Debe capturar el payload, limpiar y procesar los números usando SpamEngineService.expand_batch (Fase 2) y persistirlos en la base de datos de forma masiva dentro de la transacción asíncrona.Respuesta: Retornar cuántos números nuevos reales se insertaron (gracias al RETURNING de la query de la Fase 2) para métricas de la app.2. Endpoint Administrativo para la UI (POST /api/v1/admin/seed-range)Propósito: Gatillar de forma manual el bloqueo predictivo de un millar entero de números desde tu panel de control cuando detectes un nuevo rango de call centers.  Lógica: Recibe un número semilla, calcula su bloque base de 1.000 números y ejecuta el pipeline de guardado preventivo.3. Endpoint de Distribución iOS (GET /api/v1/downloads/callkit)Propósito: Permitir que las extensiones de iOS descarguen la lista de bloqueo completa ordenada ascendentemente.Restricción de infraestructura: Como la lista expandida puede tener cientos de miles de registros, está prohibido volcar un JSON gigante en memoria. El agente debe usar StreamingResponse de FastAPI junto con el generador asíncrono fetch_sorted_callkit_list de la Fase 2.Optimización: El stream de datos debe viajar comprimido en Gzip sobre la marcha (on-the-fly) mediante un generador intermedio para reducir drásticamente el consumo de ancho de banda del celular del usuario.Plantilla de Referencia para los Endpoints (FastAPI Async)Pedile al agente que estructure los controladores inyectando la sesión de la base de datos de la siguiente manera:Python# src/api/v1/endpoints/spam.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from typing import List
+import gzip
+# Importá acá tus esquemas Pydantic (AndroidReportBatch, ManualSeedRequest)
+# Importá acá tu SpamEngineService y tu dependencia get_async_db
+
+router = APIRouter()
+
+@router.post("/reports/batch", status_code=status.HTTP_201_CREATED)
+async def report_spam_batch(payload: AndroidReportBatch, db: AsyncSession = Depends(get_async_db)):
+    try:
+        # 1. Ejecutar la deduplicación y expansión asíncrona en memoria
+        processed_data = SpamEngineService.expand_batch(payload.numbers)
+        
+        # 2. Persistir masivamente usando la sesión asíncrona de la Fase 2
+        # (El agente debe implementar la query UPSERT aquí usando db.execute)
+        nuevos_bloqueados = 1000 # Reemplazar con el len del RETURNING real
+        
+        return {
+            "status": "success",
+            "numeros_nuevos_guardados": nuevos_bloqueados
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/downloads/callkit")
+async def download_callkit_list(db: AsyncSession = Depends(get_async_db)):
+    """
+    Hace streaming asíncrono y comprime en Gzip línea por línea (NDJSON comprimido)
+    para que iOS lo procese eficientemente sin reventar la RAM del backend.
+    """
+    async def gzip_stream_generator():
+        # Inicializamos un compresor de ráfaga en memoria
+        gzip_buffer = gzip.GzipFile(mode='wb', compresslevel=6)
+        
+        # Consumimos el generador asíncrono server-side de la Fase 2
+        async for phone_number in SpamEngineService.fetch_sorted_callkit_list(db):
+            line = f"{phone_number}\n".encode('utf-8')
+            
+            # Escribimos al buffer comprimido
+            gzip_buffer.write(line)
+            
+            # Liberamos el chunk de memoria actual
+            yield line # O una lógica de flush si agrupa por bloques pequeños
+            
+        gzip_buffer.close()
+
+    return StreamingResponse(
+        gzip_stream_generator(),
+        media_type="application/gzip",
+        headers={"Content-Disposition": "attachment; filename=callkit_blacklist.gz"}
+    )
+Plan de Verificación de la Fase 3El agente debe escribir pruebas de integración en tests/test_api_endpoints.py usando httpx.AsyncClient para validar:Que /reports/batch devuelva un código 21Created y procese correctamente los números en lote.Que /downloads/callkit responda con los headers correctos de Gzip y que al descomprimir el flujo, los números mantengan el orden estrictamente ascendente (menor a mayor).

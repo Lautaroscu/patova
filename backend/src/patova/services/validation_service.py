@@ -36,9 +36,10 @@ async def _lookup_db(
         prefix_result = await session.execute(prefix_stmt)
         prefix = prefix_result.scalar_one_or_none()
 
+    phone_number_val = int(normalized.lstrip("+"))
     stmt = (
         select(PhoneNumber)
-        .where(PhoneNumber.number_e164 == normalized)
+        .where(PhoneNumber.phone_number == phone_number_val)
         .limit(1)
     )
     result = await session.execute(stmt)

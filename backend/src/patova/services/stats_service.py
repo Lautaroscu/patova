@@ -20,7 +20,7 @@ async def get_stats(session: AsyncSession) -> dict:
     today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
     total_numbers = await session.scalar(
-        select(func.count(PhoneNumber.id))
+        select(func.count(PhoneNumber.phone_number))
     )
 
     total_reports = await session.scalar(
@@ -28,7 +28,7 @@ async def get_stats(session: AsyncSession) -> dict:
     )
 
     blocked_today = await session.scalar(
-        select(func.count(PhoneNumber.id)).where(
+        select(func.count(PhoneNumber.phone_number)).where(
             PhoneNumber.status == "SPAM",
             PhoneNumber.updated_at >= today_start,
         )
@@ -44,10 +44,14 @@ async def get_stats(session: AsyncSession) -> dict:
 
     top_reported = [
         {
+            "number_e164": p.number_e164,
             "number_e164_masked": mask_e164(p.number_e164),
+            "phone_number": p.phone_number,
             "spam_score": p.spam_score,
             "report_count": p.report_count,
             "status": p.status.value if p.status else "UNVERIFIED",
+            "is_predicted": p.is_predicted,
+            "source": p.source.value if p.source else "SEED",
         }
         for p in top_numbers
     ]

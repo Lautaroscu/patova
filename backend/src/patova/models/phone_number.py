@@ -1,8 +1,9 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, SmallInteger, String
+from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, Integer, SmallInteger, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
@@ -17,11 +18,9 @@ class PhoneNumber(Base):
         ),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    number_e164: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    number_local: Mapped[str] = mapped_column(String(15), nullable=False)
+    phone_number: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    is_predicted: Mapped[bool] = mapped_column(default=False, server_default="false", nullable=False)
+    
     prefix_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("area_prefixes.id"), nullable=True
     )
@@ -44,3 +43,12 @@ class PhoneNumber(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+
+    @hybrid_property
+    def number_e164(self) -> str:
+        return f"+{self.phone_number}"
+
+    @number_e164.setter
+    def number_e164(self, val: str) -> None:
+        self.phone_number = int(val.lstrip("+"))
+

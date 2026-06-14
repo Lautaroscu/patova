@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from patova.api.deps import verify_api_key
 from patova.db.session import get_session
 from patova.models.phone_number import PhoneNumber
 from patova.models.report import Report
@@ -25,25 +26,29 @@ def _phone_hash(number_e164: str) -> str:
 async def get_reputation(
     phone_input: str,
     session: AsyncSession = Depends(get_session),
+    _api_key: str = Depends(verify_api_key),
 ):
     phone_hash = phone_input
     if len(phone_input) != 64:
         phone_hash = _phone_hash(phone_input)
 
-    stmt = (
-        select(PhoneNumber)
-        .where(PhoneNumber.number_e164 == phone_input)
-        .limit(1)
-    )
-    result = await session.execute(stmt)
-    phone = result.scalar_one_or_none()
+    phone = None
+    if len(phone_input) != 64:
+        phone_number_val = int(phone_input.lstrip("+"))
+        stmt = (
+            select(PhoneNumber)
+            .where(PhoneNumber.phone_number == phone_number_val)
+            .limit(1)
+        )
+        result = await session.execute(stmt)
+        phone = result.scalar_one_or_none()
 
     raw_reports: list[Report] = []
 
     if phone is not None:
         reports_stmt = (
             select(Report)
-            .where(Report.phone_number_id == phone.id)
+            .where(Report.phone_number == phone.phone_number)
             .order_by(Report.created_at.desc())
             .limit(500)
         )

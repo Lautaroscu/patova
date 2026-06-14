@@ -110,7 +110,7 @@ def filter_sybil_reports(reports: list[Report]) -> tuple[list[Report], int]:
         if r.ip_hash and r.ip_hash in suspicious_ips:
             sybil_removed += 1
             continue
-        key = (r.reporter_device_id or "", str(r.phone_number_id))
+        key = (r.reporter_device_id or "", str(r.phone_number))
         if key in seen_device_number:
             sybil_removed += 1
             continue

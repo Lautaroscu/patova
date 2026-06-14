@@ -31,7 +31,7 @@ class ReportSyncTest {
     fun `call event is saved after blocking decision`() = runTest {
         val savedEvents = mutableListOf<CallEventEntity>()
 
-        val callEventDao = object : CallEventDao {
+        val callEventDao = object : FakeCallEventDao() {
             override fun getAllFlow() = flowOf(savedEvents.toList())
             override suspend fun insert(entity: CallEventEntity) { savedEvents.add(entity) }
             override suspend fun getById(id: String) = savedEvents.find { it.id == id }
@@ -41,11 +41,9 @@ class ReportSyncTest {
             }
         }
 
-        val fakeApi = object : PatovaApi {
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun validate(request: ValidateRequest) =
                 ValidateResponse(verdict = "BLOCK", spamScore = 87)
-            override suspend fun report(request: ReportRequest) = ReportResponse()
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val fakeDao = object : CachedValidationDao {
@@ -73,14 +71,12 @@ class ReportSyncTest {
     fun `report with network calls API`() = runTest {
         var reportReceived = false
 
-        val fakeApi = object : PatovaApi {
-            override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "UNKNOWN")
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun report(request: ReportRequest): ReportResponse {
                 reportReceived = true
                 assertEquals("SPAM_CALL", request.reportType)
                 return ReportResponse()
             }
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val pendingReportDao = fakeEmptyPendingReportDao()
@@ -99,12 +95,10 @@ class ReportSyncTest {
     fun `report without network saves pending`() = runTest {
         val savedPending = mutableListOf<PendingReportEntity>()
 
-        val fakeApi = object : PatovaApi {
-            override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "UNKNOWN")
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun report(request: ReportRequest): ReportResponse {
                 throw java.io.IOException("network error")
             }
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val pendingReportDao = object : PendingReportDao {
@@ -147,13 +141,11 @@ class ReportSyncTest {
 
         var reportedHash: String? = null
 
-        val fakeApi = object : PatovaApi {
-            override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "UNKNOWN")
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun report(request: ReportRequest): ReportResponse {
                 reportedHash = request.numberHash
                 return ReportResponse()
             }
-            override suspend fun feedback(request: FeedbackRequest) = FeedbackResponse()
         }
 
         val pendingReportDao = object : PendingReportDao {
@@ -196,9 +188,7 @@ class ReportSyncTest {
         var feedbackReceived = false
         var receivedFeedbackType: String? = null
 
-        val fakeApi = object : PatovaApi {
-            override suspend fun validate(request: ValidateRequest) = ValidateResponse(verdict = "UNKNOWN")
-            override suspend fun report(request: ReportRequest) = ReportResponse()
+        val fakeApi = object : FakePatovaApi() {
             override suspend fun feedback(request: FeedbackRequest): FeedbackResponse {
                 feedbackReceived = true
                 receivedFeedbackType = request.feedbackType
@@ -207,12 +197,7 @@ class ReportSyncTest {
             }
         }
 
-        val callEventDao = object : CallEventDao {
-            override fun getAllFlow() = flowOf(emptyList<CallEventEntity>())
-            override suspend fun insert(entity: CallEventEntity) {}
-            override suspend fun getById(id: String): CallEventEntity? = null
-            override suspend fun markFeedbackSynced(id: String) {}
-        }
+        val callEventDao = object : FakeCallEventDao() {}
 
         val pendingReportDao = fakeEmptyPendingReportDao()
         val fakeDeviceId = object : DeviceIdProvider {

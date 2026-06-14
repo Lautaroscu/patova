@@ -56,17 +56,18 @@ class TestAdminDashboard:
         assert response.status_code == 401
 
     async def test_admin_returns_html(self, client: AsyncClient):
-        response = await client.get("/admin", headers=_headers())
+        response = await client.get("/admin", auth=("admin", get_settings().patova_admin_key))
         assert response.status_code == 200
         assert "text/html" in response.headers["content-type"]
         assert "Patova Admin" in response.text
 
     async def test_admin_contains_cards(self, client: AsyncClient):
-        response = await client.get("/admin", headers=_headers())
+        response = await client.get("/admin", auth=("admin", get_settings().patova_admin_key))
         html = response.text
-        assert "Total Numbers" in html
-        assert "Total Reports" in html
-        assert "Blocked Today" in html
+        assert "Total de Números" in html
+        assert "Total de Reportes" in html
+        assert "Bloqueados Hoy" in html
+
 
 
 class TestMetricsEndpoint:

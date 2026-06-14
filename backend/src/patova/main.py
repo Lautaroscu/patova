@@ -100,20 +100,23 @@ def create_app() -> FastAPI:
     _setup_sentry(settings)
 
     app = FastAPI(title=settings.app_name, version=settings.api_version)
+    
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.add_middleware(ExceptionHandlingMiddleware)
     app.middleware("http")(_prometheus_middleware)
 
-    @app.get("/", response_class=HTMLResponse, include_in_schema=False)
-    def render_landing():
-        landing_path = Path(__file__).resolve().parent / "templates" / "landing.html"
-        if landing_path.exists():
-            return HTMLResponse(content=landing_path.read_text(encoding="utf-8"))
-        
-        fallback_path = Path("/app/src/patova/templates/landing.html")
-        if fallback_path.exists():
-            return HTMLResponse(content=fallback_path.read_text(encoding="utf-8"))
-            
-        return HTMLResponse(content="<h1>Welcome to Patova API</h1>")
+
+    @app.get("/", include_in_schema=False)
+    def root_status():
+        return {"status": "ok", "message": "Patova API"}
 
     app.include_router(api_router)
 

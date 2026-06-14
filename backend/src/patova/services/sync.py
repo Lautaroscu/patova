@@ -19,9 +19,31 @@ from patova.schemas.sync import (
 async def sync_behavior(
     session: AsyncSession,
     user_id: str,
-    client_last_sync_timestamp: datetime,
-    local_changes: LocalChanges,
+    client_last_sync_timestamp: datetime | None,
+    local_changes: LocalChanges | None,
 ) -> SyncResponse:
+    if local_changes is None:
+        local_changes = LocalChanges()
+
+    if client_last_sync_timestamp is None:
+        client_last_sync_timestamp = datetime(1970, 1, 1, tzinfo=UTC)
+    elif client_last_sync_timestamp.tzinfo is None:
+        client_last_sync_timestamp = client_last_sync_timestamp.replace(tzinfo=UTC)
+
+    # Convert whitelist_entries added_at to timezone-aware UTC if they are naive
+    for entry in local_changes.new_whitelist_entries:
+        if entry.added_at.tzinfo is None:
+            entry.added_at = entry.added_at.replace(tzinfo=UTC)
+
+    # Convert blacklist_entries added_at to timezone-aware UTC if they are naive
+    for entry in local_changes.new_blacklist_entries:
+        if entry.added_at.tzinfo is None:
+            entry.added_at = entry.added_at.replace(tzinfo=UTC)
+
+    # If preferences is not None, ensure updated_at is timezone-aware
+    if local_changes.preferences is not None and local_changes.preferences.updated_at.tzinfo is None:
+        local_changes.preferences.updated_at = local_changes.preferences.updated_at.replace(tzinfo=UTC)
+
     canonical_prefs = await _resolve_preferences(session, user_id, local_changes.preferences)
     await _merge_whitelist_entries(session, user_id, local_changes.new_whitelist_entries)
     await _merge_blacklist_entries(session, user_id, local_changes.new_blacklist_entries)

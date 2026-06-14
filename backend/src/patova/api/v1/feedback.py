@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from patova.api.deps import verify_api_key
@@ -16,7 +16,10 @@ async def feedback(
     session: AsyncSession = Depends(get_session),
     _api_key: str = Depends(verify_api_key),
 ):
-    response = await process_feedback(session, body)
+    try:
+        response = await process_feedback(session, body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     recalculate_spam_score.delay(response.number_e164)
     invalidate_validate_cache_task.delay(response.number_e164)

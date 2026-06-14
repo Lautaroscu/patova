@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,8 +15,8 @@ class FeedbackEvent(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    phone_number_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("phone_numbers.id"), nullable=False
+    phone_number: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("phone_numbers.phone_number"), nullable=False
     )
     reporter_device_id: Mapped[str] = mapped_column(String(64), nullable=False)
     feedback_type: Mapped[FeedbackType] = mapped_column(nullable=False)

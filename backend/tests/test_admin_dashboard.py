@@ -28,10 +28,11 @@ def _headers():
 
 class TestAdminDashboard:
     async def test_dashboard_loads(self, client: AsyncClient):
-        response = await client.get("/admin", headers=_headers())
+        response = await client.get("/admin", auth=("admin", get_settings().patova_admin_key))
         assert response.status_code == 200
         assert "</html>" in response.text
 
     async def test_dashboard_shows_top_reported(self, client: AsyncClient):
-        response = await client.get("/admin", headers=_headers())
-        assert "Top Reported" in response.text
+        response = await client.get("/admin", auth=("admin", get_settings().patova_admin_key))
+        assert "Números Más Reportados" in response.text
+

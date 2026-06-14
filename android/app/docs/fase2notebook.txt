@@ -1,0 +1,59 @@
+ESPECIFICACIÓN TÉCNICA: FASE 2 - MOTOR DE PREDICCIÓN Y GENERACIÓN COMPATIBLE CON CALLKITObjetivo de la FaseImplementar la capa de servicios (src/services/spam_engine.py) encargada de la lógica matemática de expansión de bloques de 1.000 números y la generación de estructuras indexadas de alta velocidad de lectura ordenadas ascendentemente para el consumo de los clientes móviles.Tareas Específicas para el Agente1. Desarrollar el Servicio de Expansión (spam_engine.py)El agente debe crear un servicio que exponga dos métodos principales:expand_number_to_block(phone_number: int) -> Set[int]: Método puro que toma un número entero (ej: 5491154386201), trunca los últimos 3 dígitos para encontrar la base del proveedor VoIP  (5491154386000) y genera el conjunto secuencial hasta el 5491154386999.  process_batch_reporting(numbers: List[int]) -> List[Tuple[int, bool]]: Método encargado de procesar listas de números que vienen desde los reportes masivos de Android. Debe realizar deduplicación en memoria (si vienen 3 números del mismo millar, expande el bloque una sola vez) para no saturar Postgres con colisiones repetidas.2. Implementar el Extractor para iOS/CallKitRESTRICCIÓN CRÍTICA DE IOS: La extensión de sistema CallKit en iOS rompe o ignora los números si la lista no viene guardada en un orden estrictamente ascendente (de menor a mayor).El agente debe crear un método utilitario dentro del servicio: get_callkit_blacklist(db_session).Este método debe realizar una consulta paginada o un streaming directo desde Postgres aplicando un estricto ORDER BY phone_number ASC.Para evitar que la API consuma ráfagas de memoria al procesar millones de registros expandidos, el agente debe estructurar la salida para que pueda ser cacheada como un archivo estático compacto (ej: un volcado binario o un JSON comprimido) que la app de iOS pueda descargar en segundo plano.Plantilla de Referencia para el Código BasePedile al agente que implemente la lógica core siguiendo esta estructura limpia y tipada:Python# src/services/spam_engine.py
+from typing import List, Set, Tuple, Dict
+from sqlalchemy.orm import Session
+from sqlalchemy import select
+# Importá acá tu modelo PhoneNumber de la Fase 1
+
+class SpamEngineService:
+    BLOCK_SIZE = 1000
+
+    @staticmethod
+    def get_block_bounds(phone_number: int) -> Tuple[int, int]:
+        """
+        Aplica aritmética entera para truncar al millar más cercano.
+        Ej: 5491154386201 -> Start: 5491154386000, End: 5491154386999
+        """
+        start_range = (phone_number // SpamEngineService.BLOCK_SIZE) * SpamEngineService.BLOCK_SIZE
+        end_range = start_range + (SpamEngineService.BLOCK_SIZE - 1)
+        return start_range, end_range
+
+    @classmethod
+    def expand_batch(cls, raw_numbers: List[int]) -> List[Tuple[int, bool]]:
+        """
+        Toma una lista de semillas, calcula los bloques únicos en memoria
+        y devuelve las tuplas listas para el bulk_insert.
+        """
+        unique_blocks: Dict[int, int] = {} # Mapea: seed -> start_range
+        
+        for num in raw_numbers:
+            start, _ = cls.get_block_bounds(num)
+            unique_blocks[num] = start
+            
+        # Generamos el universo de números expandidos deduplicados
+        final_payload: Dict[int, bool] = {}
+        
+        # 1. Poblar las predicciones preventivas (True)
+        for seed, start_base in unique_blocks.items():
+            for generated_num in range(start_base, start_base + cls.BLOCK_SIZE):
+                final_payload[generated_num] = True
+                
+        # 2. Forzar que las semillas reales queden como reportes confirmados (False)
+        for seed in unique_blocks.keys():
+            final_payload[seed] = False
+            
+        return [(num, is_predicted) for num, is_predicted in final_payload.items()]
+
+    @staticmethod
+    def fetch_sorted_callkit_list(db: Session, batch_size: int = 50000):
+        """
+        Generador (yield) que hace streaming de los números ordenados ascendentemente
+        para evitar picos de memoria en el backend al armar el archivo para iOS.
+        """
+        # IMPORTANTE: El ORDER BY ASC es mandatorio para CallKit
+        stmt = select(PhoneNumber.phone_number).order_by(PhoneNumber.phone_number.asc())
+        
+        # Executar usando execution_options para activar server-side cursors de Postgres
+        result = db.stream(stmt)
+        for row in result:
+            yield row[0]
+Plan de Verificación de la Fase 2El agente debe incluir pruebas en tests/test_spam_engine.py para asegurar que:La expansión matemática calcule los extremos correctos de un bloque (límites del .000 al .999).La deduplicación en memoria funcione correctamente si se envían semillas duplicadas o vecinas.El streaming de CallKit devuelva los números efectivamente ordenados de menor a mayor.

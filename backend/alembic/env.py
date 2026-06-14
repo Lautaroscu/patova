@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 import patova.models.area_prefix  # noqa: F401
 import patova.models.blacklist_entry  # noqa: F401
+import patova.models.blocked_call_log  # noqa: F401
 import patova.models.feedback_event  # noqa: F401
 import patova.models.phone_number  # noqa: F401
 import patova.models.report  # noqa: F401

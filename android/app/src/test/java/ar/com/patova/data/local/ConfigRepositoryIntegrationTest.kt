@@ -6,12 +6,12 @@ import ar.com.patova.data.local.daos.WhitelistDao
 import ar.com.patova.data.local.entities.BlacklistEntity
 import ar.com.patova.data.local.entities.LocalPreferencesEntity
 import ar.com.patova.data.local.entities.WhitelistEntity
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -84,21 +84,20 @@ class DaoIntegrationTest {
         assertTrue(blacklistDao.exists("shared") > 0)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun `observe preferences emits initial null then updated`() = runTest {
+    fun `observe preferences emits initial null then updated`() = runTest(UnconfinedTestDispatcher()) {
         val dao = FakePreferencesDaoForTest()
         val collected = mutableListOf<LocalPreferencesEntity?>()
 
-        val job = launch(StandardTestDispatcher()) {
+        val job = launch {
             dao.observe().collect { collected.add(it) }
         }
-        advanceUntilIdle()
 
         assertEquals(1, collected.size)
         assertEquals(null, collected[0])
 
         dao.upsert(LocalPreferencesEntity(strictMode = true, updatedAt = 100L))
-        advanceUntilIdle()
 
         assertEquals(2, collected.size)
         assertTrue(collected[1]!!.strictMode)

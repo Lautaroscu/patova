@@ -6,7 +6,9 @@ import android.provider.ContactsContract
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.util.Log
+import ar.com.patova.data.local.CachedValidationDao
 import ar.com.patova.data.local.CallEventDao
+import ar.com.patova.data.local.entities.LocalPreferencesEntity
 import ar.com.patova.domain.ConfigRepository
 import ar.com.patova.domain.PhoneHashing
 import ar.com.patova.domain.ValidateIncomingCallUseCase
@@ -21,6 +23,9 @@ class PatovaScreeningService : CallScreeningService() {
 
     @Inject
     lateinit var validateUseCase: ValidateIncomingCallUseCase
+
+    @Inject
+    lateinit var cachedValidationDao: CachedValidationDao
 
     @Inject
     lateinit var notificationManager: PatovaNotificationManager
@@ -38,53 +43,175 @@ class PatovaScreeningService : CallScreeningService() {
         val rawNumber = callDetails.handle?.schemeSpecificPart ?: ""
         Log.d("Patova", "Evaluando llamada entrante: $rawNumber")
 
-        // Paso 1: Comprobar Agenda de Contactos
-        if (isNumberInContacts(rawNumber)) {
-            Log.i("Patova", "Paso 1: Número en contactos. Permitido.")
-            respondToCall(callDetails, allow = true, silence = false)
-            return
-        }
-
-        // Paso 2: Comprobar relación previa en el Call Log
-        if (hasRecentRelationship(rawNumber)) {
-            Log.i("Patova", "Paso 2: Relación recíproca o llamada previa exitosa detectada. Permitido.")
-            respondToCall(callDetails, allow = true, silence = false)
-            return
-        }
-
         val phoneHash = PhoneHashing.sha256(rawNumber)
+
+        // Paso 1: Comprobar Lista Blanca Manual (Whitelist)
+        val isWhitelisted = runBlocking(Dispatchers.IO) { configRepository.isInWhitelist(phoneHash) }
+        if (isWhitelisted) {
+            Log.i("Patova", "Paso 1: Número en lista blanca. Permitido.")
+            respondToCall(callDetails, allow = true, silence = false)
+            return
+        }
+
+        // Paso 2: Comprobar Agenda de Contactos
+        if (isNumberInContacts(rawNumber)) {
+            Log.i("Patova", "Paso 2: Número en contactos. Permitido.")
+            respondToCall(callDetails, allow = true, silence = false)
+            return
+        }
+
+        // Paso 3: Comprobar relación previa en el Call Log o emergencias
+        if (hasRecentRelationship(rawNumber)) {
+            Log.i("Patova", "Paso 3: Relación recíproca o llamada previa exitosa detectada. Permitido.")
+            respondToCall(callDetails, allow = true, silence = false)
+            return
+        }
+
+        if (isEmergencyCall(phoneHash)) {
+            Log.i("Patova", "Paso 3b: EMERGENCIA DETECTADA (Segunda llamada en < 5 min). Haciendo sonar.")
+            respondToCall(callDetails, allow = true, silence = false)
+            return
+        }
+
+        // Paso 4: Comprobar Lista Negra Manual (Blacklist)
+        val isBlacklisted = runBlocking(Dispatchers.IO) { configRepository.isInBlacklist(phoneHash) }
+        if (isBlacklisted) {
+            Log.w("Patova", "Paso 4: Número en Lista Negra manual. Bloqueando.")
+            saveCallEvent(phoneHash, rawNumber, "BLOCK", 100, "Spam confirmado por Lista Negra", "BLOCKED")
+            respondToCall(callDetails, allow = false, silence = false)
+            return
+        }
+
+        // Obtener preferencias y estado premium
+        val prefs = runBlocking(Dispatchers.IO) { configRepository.getPreferences() } ?: LocalPreferencesEntity()
         val isPremium = premiumCache.premiumAvailableOffline
 
-        // Paso 3: Comprobar base de datos local (Room)
-        val isLocalSpam = checkLocalDatabaseForSpam(phoneHash)
-        if (isLocalSpam) {
-            if (isPremium) {
-                Log.w("Patova", "Paso 3: Spam Confirmado (Premium). BLOQUEANDO en silencio.")
-                saveCallEvent(phoneHash, rawNumber, "BLOCK", 100, "Spam bloqueado automáticamente", "BLOCKED")
-                respondToCall(callDetails, allow = false, silence = false) // Bloqueo duro silencioso
+        // Paso 5: Bloquear Desconocidos
+        if (prefs.blockUnknown) {
+            Log.w("Patova", "Paso 5: Bloquear Desconocidos activo. Bloqueando.")
+            saveCallEvent(phoneHash, rawNumber, "BLOCK", null, "Bloqueado por filtro de desconocidos", "BLOCKED")
+            respondToCall(callDetails, allow = false, silence = false)
+            return
+        }
+
+        // Paso 6: Modo Estricto (Solo permite contactos, whitelist y verificados por ENACOM)
+        if (prefs.strictMode) {
+            Log.i("Patova", "Paso 6: Modo Estricto activo. Consultando estado...")
+            val verdict = runBlocking(Dispatchers.IO) { validateUseCase.decide(rawNumber) }
+            val cached = runBlocking(Dispatchers.IO) { cachedValidationDao.getByHash(phoneHash) }
+            if (cached != null && cached.reason == "ENACOM" && verdict == "ALLOW") {
+                Log.i("Patova", "Modo Estricto: Número verificado por ENACOM. Permitido.")
+                respondToCall(callDetails, allow = true, silence = false)
             } else {
-                Log.w("Patova", "Paso 3: Spam Confirmado (Gratuito). Dejando pasar y alertando.")
-                saveCallEvent(phoneHash, rawNumber, "BLOCK", 100, "Spam detectado (Plan Gratuito)", "ALLOWED")
-                respondToCall(callDetails, allow = true, silence = false) // Deja pasar para que suene
-                notificationManager.showSpamWarningNotification(rawNumber) // Disparar alerta invasiva de spam
+                Log.w("Patova", "Modo Estricto: Número desconocido no verificado por ENACOM. Bloqueando.")
+                runBlocking(Dispatchers.IO) {
+                    val recent = callEventDao.getRecentCallsByHash(phoneHash, System.currentTimeMillis() - 5000L)
+                    val latest = recent.maxByOrNull { it.occurredAtMillis }
+                    if (latest != null) {
+                        callEventDao.insert(latest.copy(
+                            verdict = "BLOCK",
+                            actionTaken = "BLOCKED",
+                            reason = "Modo Estricto: No verificado por ENACOM"
+                        ))
+                    } else {
+                        callEventDao.insert(
+                            ar.com.patova.data.local.CallEventEntity(
+                                id = java.util.UUID.randomUUID().toString(),
+                                numberHash = phoneHash,
+                                numberMasked = ar.com.patova.domain.VerdictDecision.maskE164(rawNumber),
+                                verdict = "BLOCK",
+                                spamScore = cached?.spamScore,
+                                reason = "Modo Estricto: No verificado por ENACOM",
+                                occurredAtMillis = System.currentTimeMillis(),
+                                actionTaken = "BLOCKED"
+                            )
+                        )
+                    }
+                }
+                respondToCall(callDetails, allow = false, silence = false)
             }
             return
         }
 
-        // Paso 4: Filtro de Emergencia (Doble Llamada en < 5 min)
-        if (isEmergencyCall(phoneHash)) {
-            Log.i("Patova", "Paso 4: EMERGENCIA DETECTADA (Segunda llamada en < 5 min). Haciendo sonar.")
-            respondToCall(callDetails, allow = true, silence = false)
+        // Paso 7: Validación normal (Consulta API / Caché)
+        val verdict = runBlocking(Dispatchers.IO) { validateUseCase.decide(rawNumber) }
+        val cached = runBlocking(Dispatchers.IO) { cachedValidationDao.getByHash(phoneHash) }
+        val spamScore = cached?.spamScore ?: 0
+        val thresholdPercent = (prefs.spamThreshold * 100).toInt()
+        val isSpamByThreshold = spamScore >= thresholdPercent
+
+        if (verdict == "BLOCK" || verdict == "INVALID_PREFIX" || isSpamByThreshold) {
+            val finalReason = if (isSpamByThreshold) {
+                cached?.reason ?: "Spam detectado por umbral ($spamScore% >= $thresholdPercent%)"
+            } else {
+                cached?.reason ?: "Spam bloqueado automáticamente"
+            }
+
+            if (isPremium) {
+                Log.w("Patova", "Filtro Normal: Spam confirmado (Premium). Bloqueando en silencio.")
+                runBlocking(Dispatchers.IO) {
+                    val recent = callEventDao.getRecentCallsByHash(phoneHash, System.currentTimeMillis() - 5000L)
+                    val latest = recent.maxByOrNull { it.occurredAtMillis }
+                    if (latest != null) {
+                        callEventDao.insert(latest.copy(
+                            verdict = "BLOCK",
+                            actionTaken = "BLOCKED",
+                            reason = finalReason
+                        ))
+                    } else {
+                        callEventDao.insert(
+                            ar.com.patova.data.local.CallEventEntity(
+                                id = java.util.UUID.randomUUID().toString(),
+                                numberHash = phoneHash,
+                                numberMasked = ar.com.patova.domain.VerdictDecision.maskE164(rawNumber),
+                                verdict = "BLOCK",
+                                spamScore = spamScore,
+                                reason = finalReason,
+                                occurredAtMillis = System.currentTimeMillis(),
+                                actionTaken = "BLOCKED"
+                            )
+                        )
+                    }
+                }
+                respondToCall(callDetails, allow = false, silence = false)
+            } else {
+                Log.w("Patova", "Filtro Normal: Spam confirmado (Gratuito). Haciendo sonar y alertando.")
+                runBlocking(Dispatchers.IO) {
+                    val recent = callEventDao.getRecentCallsByHash(phoneHash, System.currentTimeMillis() - 5000L)
+                    val latest = recent.maxByOrNull { it.occurredAtMillis }
+                    if (latest != null) {
+                        callEventDao.insert(latest.copy(
+                            verdict = "BLOCK",
+                            reason = "$finalReason (Plan Gratuito)"
+                        ))
+                    }
+                }
+                respondToCall(callDetails, allow = true, silence = false)
+                notificationManager.showSpamWarningNotification(rawNumber)
+            }
             return
         }
 
-        // Paso 5: Desconocido sin reportes -> Silenciado inteligente (Filtro Suave)
+        // Paso 8: Desconocido sin reportes o bajo umbral -> Silenciado inteligente para Premium
         if (isPremium) {
-            Log.i("Patova", "Paso 5: Número desconocido absoluto (Premium). Silenciando silenciosamente en segundo plano.")
-            saveCallEvent(phoneHash, rawNumber, "SUSPECT", 65, "Silenciado inteligente", "ALLOWED")
-            respondToCall(callDetails, allow = true, silence = true)
+            if (verdict == "SUSPECT" || verdict == "UNKNOWN") {
+                Log.i("Patova", "Filtro Normal: Número sospechoso/desconocido (Premium). Silenciando en segundo plano.")
+                runBlocking(Dispatchers.IO) {
+                    val recent = callEventDao.getRecentCallsByHash(phoneHash, System.currentTimeMillis() - 5000L)
+                    val latest = recent.maxByOrNull { it.occurredAtMillis }
+                    if (latest != null) {
+                        callEventDao.insert(latest.copy(
+                            reason = "Silenciado inteligente"
+                        ))
+                    }
+                }
+                respondToCall(callDetails, allow = true, silence = true)
+            } else {
+                Log.i("Patova", "Filtro Normal: Número permitido/seguro. Haciendo sonar.")
+                respondToCall(callDetails, allow = true, silence = false)
+            }
         } else {
-            Log.i("Patova", "Paso 5: Número desconocido absoluto (Gratuito). Haciendo sonar normalmente.")
+            Log.i("Patova", "Filtro Normal: Plan Gratuito. Haciendo sonar normalmente.")
             respondToCall(callDetails, allow = true, silence = false)
         }
         

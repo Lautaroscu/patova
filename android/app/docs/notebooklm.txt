@@ -1,0 +1,600 @@
+ey, dame el plan para poder seedear la base de datos maestra de numeros de spam con las llamadasd que Android detecte, y primero que nada, lograr un Seed inicial con numeros de ejemplo que nos hayam llamado a nosotros, asi podemos aplicar la generacion de numeros de spam en un rango de 1000 numeros, ya que, es lo que suelen compras las telefonicas, me segfuis el plan ? es para mi App de patova, para poder generar nuestra base de datos de manera rapida, y que para IOS podamos tener una base de datos para pasarle al CallKit, si no es Useless, en android tenemos mas libertad, pero IOS no.
+
+
+
+aclaracion, el backend en python y la base maesta es postgres, ya esta bastante avanzadada, me falta esta forma de hacer base de datos de manera rapida y eficiente
+
+Te sigo perfectamente. El enfoque que planteás tiene todo el sentido técnico dentro del contexto actual de las telecomunicaciones. Como muestran los análisis del ecosistema de spam, las agencias de telemercadeo y cobranzas automatizadas operan de forma industrializada adquiriendo rangos enteros de numeración (troncales SIP asignados a mayoristas). Cuando los usuarios reportan un número, los marcadores predictivos rotan automáticamente al siguiente dígito dentro del mismo bloque (por ejemplo, pasando del 11-5438-6201 al 11-5438-6202) para evadir bloqueos individuales.  
+MD
++ 1
+
+Anticiparse bloqueando el bloque completo de 1.000 números es una estrategia de filtrado predictivo muy sólida.  
+MD
++ 1
+
+Para armar este seed inicial de manera rápida y eficiente en PostgreSQL usando Python, tenemos dos caminos de diseño. Te dejo la estrategia de datos y el script para impactar tu base maestra.
+
+Estrategia de Base de Datos: Bruto vs. Rangos
+Dado que mencionás iOS (CallKit), tené en cuenta una limitación crítica: CallKit requiere que le pases una lista de números ordenados de forma ascendente y mapeados a una etiqueta. Si bien en Android tenés más libertad para interceptar en tiempo real, CallKit levanta la base en memoria dentro de una extensión de sistema.
+
+Para que tu backend sirva a ambos mundos de forma eficiente, te sugiero estructurar la base maestra de dos formas en Postgres:
+
+Tabla de números individuales (Maestra Expandida): Necesaria para generar el archivo binario ordenado o indexado que CallKit consume.
+
+Tabla de bloques/rangos (Heurística): Para machear rápidamente consultas complejas en tu API mediante operadores de rango de Postgres (int8range).
+
+Script de Python para Seeding y Expansión de Rangos
+Este script toma un número de ejemplo detectado, calcula la base del bloque de 1.000 números (redondeando al millar más cercano) y realiza una inserción masiva (bulk_insert) optimizada en tu base Postgres.
+
+Python
+import psycopg2
+from psycopg2.extras import execute_values
+import re
+
+# Configuración de tu conexión a Postgres
+DB_PARAMS = {
+    "dbname": "tu_base_maestra",
+    "user": "postgres",
+    "password": "tu_password",
+    "host": "localhost",
+    "port": 5432
+}
+
+def clean_number(phone_str):
+    """
+    Limpia el formato del número eliminando signos, espacios y el prefijo internacional
+    para operar con enteros puros (ej: +54 9 11 5438-6201 -> 5491154386201)
+    """
+    cleaned = re.sub(r'\D', '', phone_str)
+    return int(cleaned) if cleaned else None
+
+def generate_block_range(seed_number, block_size=1000):
+    """
+    Toma un número semilla y calcula el inicio y fin del bloque de 1000 números.
+    Ejemplo: 5491154386201 -> Inicio: 5491154386000, Fin: 5491154386999
+    """
+    base = (seed_number // block_size) * block_size
+    range_start = base
+    range_end = base + (block_size - 1)
+    return range_start, range_end
+
+def seed_spam_database(seed_list):
+    conn = None
+    try:
+        conn = psycopg2.connect(**DB_PARAMS)
+        cur = conn.cursor()
+        
+        # 1. Crear tabla de ejemplo si no existe
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS spam_numbers (
+                phone_number BIGINT PRIMARY KEY,
+                is_predicted BOOLEAN DEFAULT FALSE,
+                detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_spam_numbers_phone ON spam_numbers(phone_number);
+        """)
+        
+        all_numbers_to_insert = set()
+        
+        # 2. Procesar cada semilla para expandir el rango
+        for seed_str in seed_list:
+            cleaned = clean_number(seed_str)
+            if not cleaned:
+                continue
+                
+            start, end = generate_block_range(cleaned)
+            print(f"Expandiendo semilla {seed_str} a rango: {start} - {end}")
+            
+            # Generamos los 1000 números del bloque
+            for num in range(start, end + 1):
+                # El número original se marca como detectado real, los otros como predicción
+                is_predicted = (num != cleaned)
+                all_numbers_to_insert.add((num, is_predicted))
+        
+        # Convertimos a lista para psycopg2
+        data_tuples = list(all_numbers_to_insert)
+        
+        # 3. Inserción masiva eficiente ignorando duplicados existentes (Upsert)
+        query = """
+            INSERT INTO spam_numbers (phone_number, is_predicted)
+            VALUES %s
+            ON CONFLICT (phone_number) DO NOTHING;
+        """
+        
+        print(f"Iniciando inserción masiva de {len(data_tuples)} números...")
+        execute_values(cur, query, data_tuples)
+        conn.commit()
+        print("¡Base de datos seedeada con éxito!")
+        
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error durante el seeding: {e}")
+    finally:
+        if conn:
+            cur.close()
+            conn.close()
+
+# --- EJECUCIÓN DEL SEED INITIAL ---
+if __name__ == "__main__":
+    # Ponemos números reales identificados en reportes como semillas (Convergia/Iplan/Ike)
+    # Rango 11-5438-XXXX y 11-6842-XXXX
+    numeros_semilla_ejemplo = [
+        "+54 9 11 5438-6201",  # Caso Ike Argentina / ICBC
+        "+54 9 11 6842-1550",  # Caso Banco Santander / Alprestamo
+        "+54 9 11 5553-4012"   # Telemercadeo multimarca
+    ]
+    
+    seed_spam_database(numeros_semilla_ejemplo)
+Optimización para CallKit (iOS)
+⚠️ Nota de rendimiento para iOS: CallKit no tolera actualizaciones lentas. Si tu base de datos en Postgres crece a millones de registros por la expansión de bloques, cuando la app de iOS consulte a tu API para descargar la "lista negra", no le mandes el JSON crudo de millones de filas.
+
+Te conviene generar en el backend un archivo estático indexado binario periódicamente y que la app de iOS lo descargue de fondo (Background Fetch), ordenado estrictamente por número telefónico.
+
+¿Cómo tenés pensado manejar la sincronización y el consumo de memoria en la extensión de iOS para que no te tire un memory crash al cargar tantos rangos generados?
+
+che y pregunta, cuantas veces recomendas ejecutar ese Seed, para ver con un numero, cuantos numeros bloqueo, como tomo esa metrica ?
+
+Mirá, el concepto clave acá es que no necesitás ejecutar el Seed varias veces para el mismo número, sino que tenés que integrarlo en el flujo de tu backend cada vez que entre un reporte de un número nuevo que no tengas en los radares.  
+MD
+
+Como la infraestructura del spam en Argentina está automatizada mediante marcadores predictivos que compran bloques enteros a mayoristas como Convergia o Iplan (típicamente las series 11-5438-XXXX o 11-6842-XXXX), por cada 1 número semilla real que procesás, estás bloqueando 1.000 números en total (el millar completo de esa troncal SIP).  
+MD
++ 2
+
+Para medir el impacto real y saber si tu "App Patova" está siendo eficiente, tenés que trackear tres métricas fundamentales. Acá te explico cómo tomarlas directamente desde tu base de datos Postgres.
+
+1. Métrica de Inserción: Rendimiento del Seeding (Nuevos vs. Duplicados)
+Cuando un usuario reporte un número, vas a correr la función de expansión. Si ese bloque de 1.000 números ya había sido generado por otra semilla previamente, el ON CONFLICT DO NOTHING de Postgres va a ignorar los duplicados.
+
+Para medir cuántos números nuevos estás aportando a la lista negra con cada ejecución, modificá la consulta SQL usando RETURNING:
+
+Python
+# Al agregar RETURNING, Postgres te devuelve solo las filas que efectivamente se insertaron
+query = """
+    INSERT INTO spam_numbers (phone_number, is_predicted)
+    VALUES %s
+    ON CONFLICT (phone_number) DO NOTHING
+    RETURNING phone_number;
+"""
+cur.execute(query, data_tuples)
+nuevos_bloqueados = len(cur.fetchall())
+
+print(f"Semilla procesada. Números efectivamente agregados a la lista negra: {nuevos_bloqueados}")
+
+Si devuelve 1.000: Bloqueaste un millar de spam completamente nuevo.  
+MD
+
+
+Si devuelve 0: Esa troncal SIP ya la tenías totalmente mapeada y protegida gracias a un reporte anterior.  
+MD
+
+2. Métrica de Base de Datos: Salud de la Base Maestra
+Para auditar cómo viene creciendo tu base y qué porcentaje de tu base de datos es "predictiva" (gracias al algoritmo) versus "reactiva" (reportada por usuarios reales), tirá esta consulta en Postgres:
+
+SQL
+SELECT 
+    is_predicted, 
+    COUNT(*) as cantidad_numeros,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as porcentaje
+FROM spam_numbers
+GROUP BY is_predicted;
+Ejemplo de output esperado:
+is_predicted	cantidad_numeros	porcentaje	Descripción
+false	150	0.15%	
+Números que llamaron y reportó la comunidad. 
+MD
+
+true	99.850	99.85%	
+Números bloqueados preventivamente por tu backend. 
+MD
+
+3. El KPI Estrella: Hit Rate Predictivo (Efectividad de Bloqueo)
+Esta es la métrica más importante para validar tu negocio (y para mostrársela a tus usuarios premium). Tenés que medir cuántas veces tu base de datos atajó una llamada spam antes de que un humano la tuviera que reportar.  
+MD
+
+Para esto, vas a necesitar una tabla de logs donde registres cada llamada que tu app intercepta en los celulares. La lógica es la siguiente:
+
+SQL
+SELECT 
+    sn.is_predicted,
+    COUNT(log.id) as llamadas_bloqueadas,
+    ROUND(COUNT(log.id) * 100.0 / SUM(COUNT(log.id)) OVER(), 2) as eficienca_del_filtro
+FROM logs_llamadas_bloqueadas log
+JOIN spam_numbers sn ON log.phone_number = sn.phone_number
+GROUP BY sn.is_predicted;
+
+¿Cómo se interpreta esto? Si el is_predicted = true tiene un porcentaje alto (por ejemplo, más del 80%), significa que tu estrategia de expandir a rangos de 1.000 funciona un golazo: estás cazando a los spammers en medio de su rotación de identificadores (CLI rotation) antes de que molesten a otro usuario.  
+MD
+
+ok, con todo lo que hablamos., dame un .md para qe mi agente de codigo aplique estas tecnicas
+
+Acá tenés el archivo técnico en formato Markdown listo para que se lo pases a tu agente de código (LLM o asistente de IDE). Está estructurado como una especificación de requerimientos de ingeniería (PRD/Spec) para que el agente entienda el modelo de datos, la lógica algorítmica y las consultas exactas que tiene que implementar.
+
+Markdown
+# ESPECIFICACIÓN TÉCNICA: MÓDULO DE SEEDING PREDICTIVO Y MÉTRICAS DE BLOQUEO
+
+## 1. Contexto Operativo y Estrategia
+El backend de "App Patova" debe mitigar el spam telefónico industrializado. [cite_start]Los spammers utilizan Marcadores Predictivos (Predictive Dialers) con rotación automatizada de identificadores (CLI rotation) sobre bloques enteros de números contratados a mayoristas VoIP (como Convergia o Iplan)[cite: 58, 67, 78]. [cite_start]Rangos críticos identificados en LATAM incluyen las series `11-5438-XXXX` y `11-6842-XXXX`[cite: 58].
+
+[cite_start]Nuestra estrategia consiste en que **1 número semilla reportado** expanda un bloqueo preventivo sobre el **bloque completo de 1.000 números** (el millar correspondiente), adelantándonos a la rotación del bot[cite: 78].
+
+---
+
+## 2. Modelo de Datos (PostgreSQL)
+
+Aplica este esquema optimizado para búsquedas rápidas e indexación compatible con Android y CallKit (iOS).
+
+```sql
+-- Tabla Maestra de Números de Spam
+CREATE TABLE spam_numbers (
+    phone_number BIGINT PRIMARY KEY, -- Formato puro: 5491154386201
+    is_predicted BOOLEAN DEFAULT FALSE, -- FALSE = Reporte real, TRUE = Expandido por algoritmo
+    detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Índice B-Tree para consultas 1-a-1 en la API
+CREATE INDEX IF NOT EXISTS idx_spam_numbers_phone ON spam_numbers(phone_number);
+
+-- Historial de Intercepciones (Logs de llamadas atajadas)
+CREATE TABLE blocked_calls_log (
+    id BIGSERIAL PRIMARY KEY,
+    phone_number BIGINT NOT NULL,
+    intercepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT NOT NULL
+);
+
+-- Índice para acelerar el cálculo de métricas de hit-rate
+CREATE INDEX IF NOT EXISTS idx_blocked_logs_phone ON blocked_calls_log(phone_number);
+3. Lógica del Servicio en Python (Librería psycopg2 / asyncpg)
+El agente debe implementar las siguientes funciones clave en la capa de servicios:
+
+A. Normalización y Cálculo de Bloques (Heurística)
+Limpieza: Remover caracteres no numéricos y prefijos redundantes.
+
+Cálculo: Obtener el límite inferior y superior del millar usando división entera truncada.
+
+base=⌊n 
+u
+ˊ
+ mero/1000⌋×1000
+B. Ejecución del Seed con Captura de Métricas Directas
+Utilizar la cláusula RETURNING en el pipeline de inserción masiva para calcular exactamente cuántos números nuevos (no duplicados) aportó esta semilla.
+
+Python
+import re
+
+def clean_and_expand_block(raw_phone: str, block_size: int = 1000):
+    # Sanatizar string a entero
+    cleaned = int(re.sub(r'\D', '', raw_phone))
+    
+    # Calcular extremos del rango de 1.000 números
+    base = (cleaned // block_size) * block_size
+    start_range = base
+    end_range = base + (block_size - 1)
+    
+    # Generar tuplas (phone_number, is_predicted)
+    data_tuples = []
+    for num in range(start_range, end_range + 1):
+        is_predicted = (num != cleaned)
+        data_tuples.add((num, is_predicted))
+        
+    return data_tuples, cleaned
+
+def insert_seed_with_metrics(cur, raw_phone: str):
+    data_tuples, original_number = clean_and_expand_block(raw_phone)
+    
+    # Query de inserción masiva con filtro de colisiones y retorno de inserciones reales
+    query = """
+        INSERT INTO spam_numbers (phone_number, is_predicted)
+        VALUES %s
+        ON CONFLICT (phone_number) DO NOTHING
+        RETURNING phone_number;
+    """
+    
+    # Ejecución masiva optimizada
+    from psycopg2.extras import execute_values
+    execute_values(cur, query, list(data_tuples))
+    
+    inserted_rows = cur.fetchall()
+    metric_nuevos_bloqueados = len(inserted_rows)
+    
+    return {
+        "semilla_original": original_number,
+        "numeros_nuevos_guardados": metric_nuevos_bloqueados,
+        "bloque_ya_existia": (metric_nuevos_bloqueados == 0)
+    }
+4. Queries SQL para el Dashboard de Métricas
+Implementar los siguientes endpoints de telemetría en la API del backend:
+
+KPI 1: Estado de Salud de la Base de Datos (Reactivo vs. Predictivo)
+Muestra qué porcentaje de la base de datos trabaja de forma automatizada gracias a la expansión de rangos.
+
+SQL
+SELECT 
+    is_predicted, 
+    COUNT(*) as total_numeros,
+    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER(), 2) as porcentaje_del_total
+FROM spam_numbers
+GROUP BY is_predicted;
+KPI 2: Hit-Rate Predictivo (Efectividad del Patova)
+Nuestra métrica estrella. Mide cuántas llamadas fueron interceptadas en los dispositivos gracias al algoritmo predictivo antes de que un usuario real las reporte.
+
+SQL
+SELECT 
+    sn.is_predicted AS interceptado_por_prediccion,
+    COUNT(log.id) as llamadas_atajadas,
+    ROUND(COUNT(log.id) * 100.0 / SUM(COUNT(log.id)) OVER(), 2) as porcentaje_efectividad
+FROM blocked_calls_log log
+JOIN spam_numbers sn ON log.phone_number = sn.phone_number
+GROUP BY sn.is_predicted;
+5. Restricciones para Canales Móviles (iOS / Android)
+Pipeline Android: Intercepción en tiempo real mediante queries directas a la API del backend o sincronización SQLite local.
+
+Pipeline iOS (CallKit Compliant): CallKit requiere un set de datos estático, ordenado estrictamente de forma ascendente. El agente debe estructurar un worker de fondo en Python que genere un volcado ordenado (ORDER BY phone_number ASC) en un formato binario o JSON compacto para que la app lo descargue sin saturar la memoria de la extensión de iOS.
+
+la idea inicial es que en android, localmente puede aplicar evaluaciones segun historial de lllamadas y dewmas, podemos hacer cositas ahhi locales, necesito que esto sea a nivel de backend, y que periodicamente, Android, con el reporte de numeros que va bloqueando, se lo envie a la base maestra, y ademas de agregar esos numeros a la blacklist, se ejecutam este script de seed por rango, te parece bien la logica ? tambien debe exponer un endpoint para poder ejecutarlo via api a ese generador de numeros de spam, para sacarlo a una UX UI y poder seedear mas rapido nosotros
+
+La lógica es impecable y está totalmente alineada con cómo se diseñan los sistemas modernos de threat intelligence colectiva.  
+MD
++ 1
+
+Que Android procese localmente según el historial de llamadas te da una flexibilidad enorme para atajar patrones sospechosos (como llamadas silenciosas cortas o ráfagas de marcadores predictivos) sin penalizar la batería ni depender de la latencia de una API en tiempo real. Luego, centralizar esos reportes en lotes periódicos (batch reporting) es la forma correcta de escalar la base de datos sin prender fuego el pool de conexiones de Postgres.  
+MD
++ 1
+
+Para llevar esto al backend y darte la herramienta para tu panel de administración (UI/UX), te armé una propuesta de arquitectura utilizando FastAPI. Es ideal para esto porque maneja asincronismo de forma nativa, es rapidísimo y te genera la documentación de la API automáticamente (/docs), lo que te va a facilitar un montón la integración con el frontend de tu panel de control.
+
+🛠️ Implementación del Backend (FastAPI + Postgres)
+Este script expone los dos endpoints que necesitás: uno para el reporte masivo desde los clientes Android y otro para que gatilles bloqueos de rangos manualmente desde tu interfaz administrativa.
+
+Además, incluye una optimización clave: deduplicación de bloques en memoria. Si Android te reporta 5 números que pertenecen al mismo millar, el script es lo suficientemente inteligente como para expandir ese bloque de 1.000 números una sola vez, ahorrando ciclos de CPU y escrituras en disco.  
+MD
++ 2
+
+Python
+import re
+from typing import List
+from pydantic import BaseModel, Field
+from fastapi import FastAPI, HTTPException, status, Depends
+import psycopg2
+from psycopg2.extras import execute_values
+
+app = FastAPI(
+    title="Patova API - Spam Intelligence Core",
+    version="1.0.0",
+    description="Backend centralizado para el procesamiento predictivo de bloques de spam."
+)
+
+# Configuración de Postgres (Reemplazar con tus variables de entorno)
+DB_PARAMS = {
+    "dbname": "tu_base_maestra",
+    "user": "postgres",
+    "password": "tu_password",
+    "host": "localhost",
+    "port": 5432
+}
+
+# --- MODELOS DE DATOS (Pydantic) ---
+class AndroidReportBatch(BaseModel):
+    device_id: str = Field(..., description="ID único del dispositivo que reporta")
+    numbers: List[str] = Field(..., description="Lista de números detectados y bloqueados localmente por el cliente")
+
+class ManualSeedRequest(BaseModel):
+    seed_number: str = Field(..., description="Número telefónico semilla para expandir el rango de 1000")
+
+# --- FUNCIONES DE AYUDA (Helpers) ---
+def connect_db():
+    return psycopg2.connect(**DB_PARAMS)
+
+def clean_and_get_block_base(raw_phone: str, block_size: int = 1000):
+    """Limpia el número y devuelve el identificador base del millar."""
+    cleaned = re.sub(r'\D', '', raw_phone)
+    if not cleaned:
+        return None, None
+    phone_int = int(cleaned)
+    # División entera para truncar al millar más cercano (ej: 5491154386201 -> 5491154386000)
+    block_base = (phone_int // block_size) * block_size
+    return phone_int, block_base
+
+def process_expansion(cur, unique_seeds_with_bases):
+    """
+    Genera los rangos de 1000 números para cada base única y los inserta en la BD.
+    Garantiza que los reportes reales se guarden con is_predicted = FALSE y las predicciones con TRUE.
+    """
+    all_numbers_to_upsert = {}
+    
+    # Primero, calculamos las expansiones de 1000 números por cada bloque base único
+    for seed, base in unique_seeds_with_bases.items():
+        for num in range(base, base + 1000):
+            # Por defecto lo marcamos como predicción (TRUE)
+            all_numbers_to_upsert[num] = True
+
+    # Segundo, sobreescribimos los números reales reportados como FALSE (reactivos)
+    for seed in unique_seeds_with_bases.keys():
+        all_numbers_to_upsert[seed] = False
+
+    # Preparamos las tuplas para la inserción masiva
+    data_tuples = [(num, is_pred) for num, is_predicted in all_numbers_to_upsert.items()]
+
+    # Query optimizada con UPSERT. Si el número ya existía, actualiza 'is_predicted' 
+    # (por si pasa de ser preventivo a ser un reporte real confirmado por el bot)
+    query = """
+        INSERT INTO spam_numbers (phone_number, is_predicted)
+        VALUES %s
+        ON CONFLICT (phone_number) 
+        DO UPDATE SET is_predicted = EXCLUDED.is_predicted
+        RETURNING phone_number;
+    """
+    
+    execute_values(cur, query, data_tuples)
+    inserted_count = len(cur.fetchall())
+    return inserted_count
+
+
+# --- ENDPOINTS DE LA API ---
+
+@app.post("/api/v1/reports/batch", status_code=status.HTTP_201_CREATED)
+async def report_spam_batch(payload: AndroidReportBatch):
+    """
+    Endpoint utilizado por los clientes Android para sincronizar periódicamente
+    los números bloqueados localmente. Dispara la expansión automática por rangos.
+    """
+    if not payload.numbers:
+        raise HTTPException(status_code=400, detail="La lista de números no puede estar vacía.")
+    
+    unique_seeds_with_bases = {}
+    
+    # Agrupamos por bloques en memoria antes de tocar la base de datos
+    for num_str in payload.numbers:
+        phone_int, block_base = clean_and_get_block_base(num_str)
+        if phone_int and block_base:
+            unique_seeds_with_bases[phone_int] = block_base
+
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        
+        # Procesamos la inserción masiva y la expansión heurística
+        total_afectados = process_expansion(cur, unique_seeds_with_bases)
+        
+        # Opcional: Acá podrías meter lógica para guardar el log en 'blocked_calls_log' si querés métricas de uso.
+        conn.commit()
+        
+        return {
+            "status": "success",
+            "semillas_unicas_procesadas": len(unique_seeds_with_bases),
+            "registros_bd_impactados": total_afectados
+        }
+    except Exception as e:
+        if 'conn' in locals() and conn: conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
+    finally:
+        if 'conn' in locals() and conn:
+            cur.close()
+            conn.close()
+
+
+@app.post("/api/v1/admin/seed-range", status_code=status.HTTP_200_OK)
+async def manual_admin_seed(payload: ManualSeedRequest):
+    """
+    Endpoint administrativo expuesto para tu panel UX/UI.
+    Permite forzar manualmente la inserción y expansión de un número semilla.
+    """
+    phone_int, block_base = clean_and_get_block_base(payload.seed_number)
+    
+    if not phone_int or not block_base:
+        raise HTTPException(status_code=400, detail="Formato de número inválido.")
+        
+    try:
+        conn = connect_db()
+        cur = conn.cursor()
+        
+        # Pasamos el número unitario mapeado a su bloque al procesador de rangos
+        unique_seeds_with_bases = {phone_int: block_base}
+        total_afectados = process_expansion(cur, unique_seeds_with_bases)
+        
+        conn.commit()
+        return {
+            "status": "success",
+            "seed_procesado": phone_int,
+            "bloque_base_calculado": block_base,
+            "registros_bd_impactados": total_afectados
+        }
+    except Exception as e:
+        if 'conn' in locals() and conn: conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Error en la operación de seeding: {str(e)}")
+    finally:
+        if 'conn' in locals() and conn:
+            cur.close()
+            conn.close()
+💡 Ventajas de este diseño para tu Arquitectura
+
+Deduplicación inteligente: Si un marcador predictivo agresivo (como los reportados en foros que usan infraestructura de Convergia Argentina) llama a un usuario desde el 11-6842-1111, 11-6842-1112 y 11-6842-1113, y el cliente los manda todos juntos en el mismo lote, tu backend calculará la base 11-6842-1000 solo una vez. En vez de intentar insertar 3.000 filas con colisiones, inserta limpiamente las 1.000 del rango.  
+MD
++ 4
+
+
+Transición Predictivo -> Real (UPSERT): Al usar ON CONFLICT DO UPDATE, si el algoritmo ya había bloqueado preventivamente el número 11-5438-6205 (is_predicted = TRUE), pero meses después el bot efectivamente usa ese identificador para spam y un dispositivo Android lo reporta de primera mano, la base de datos se actualiza automáticamente a is_predicted = FALSE. Esto te limpia la métrica de efectividad de filtrado (Hit-Rate) para que sea 100% real.  
+MD
++ 2
+
+Documentación inmediata para tu UI: Corriendo la app con uvicorn, entrás a http://localhost:8000/docs y tenés el Swagger interactivo listo para copiar los esquemas JSON de petición al código de tu interfaz administrativa de forma transparente.
+
+¿Cómo pensás manejar el volumen de reportes desde Android para definir la frecuencia? ¿Van a enviar el batch cada cierta cantidad de horas o cuando el lote local de bloqueados llegue a un número fijo (ej. cada 10 registros)?
+
+entoonces dame el resumen de lo que tiene que hacer el agente separado en fases, asi no se vuelve loco y logramos lo que queremos
+
+De una. Para que tu agente de código trabaje sobre seguro y no rompa nada de lo que ya tenés avanzado, lo mejor es guiarlo paso a paso. Mantené esta estructura de 5 fases secuenciales para que implemente el sistema de forma limpia, eficiente y modular.
+
+📋 Plan de Implementación en Fases para el Agente
+🔹 Fase 1: Extensión del Esquema SQL (Postgres)
+El agente debe preparar la base de datos para soportar la lógica predictiva y el almacenamiento de métricas de efectividad.
+
+Acción: Crear o modificar la tabla principal spam_numbers y añadir la tabla de auditoría para las llamadas atajadas localmente por Android.
+
+Código a generar:
+
+SQL
+-- Garantizar que la tabla maestra soporte la flag de predicción
+ALTER TABLE spam_numbers ADD COLUMN IF NOT EXISTS is_predicted BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_spam_numbers_phone ON spam_numbers(phone_number);
+
+-- Tabla de logs para registrar los impactos (hits) de la App en Android
+CREATE TABLE IF NOT EXISTS blocked_calls_log (
+    id BIGSERIAL PRIMARY KEY,
+    phone_number BIGINT NOT NULL,
+    intercepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    device_id VARCHAR(255)
+);
+CREATE INDEX IF NOT EXISTS idx_blocked_logs_phone ON blocked_calls_log(phone_number);
+🔹 Fase 2: Lógica Core de Expansión (Python)
+Antes de tocar la API, el agente debe escribir una función pura encargada de limpiar los números que entran y calcular el millar base correspondiente para mitigar la rotación de identificadores de los marcadores predictivos.  
+MD
++ 1
+
+Acción: Desarrollar el algoritmo matemático de truncamiento al millar.
+
+Regla lógica: Si entra 5491154386201, la operación (número // 1000) * 1000 debe devolver 5491154386000. A partir de ahí, generar el rango hasta 5491154386999.
+
+
+Optimización requerida: Retornar un diccionario o set para realizar deduplicación en memoria si se procesan múltiples números del mismo bloque mayorista (como Convergia o Iplan) en un solo lote.  
+MD
+
+🔹 Fase 3: Pipeline de Sincronización Masiva (UPSERT)
+Acá el agente implementa la persistencia masiva en Postgres usando psycopg2.extras.execute_values.
+
+Acción: Escribir la lógica de inserción que maneje colisiones utilizando la cláusula ON CONFLICT.
+
+Regla crítica de negocio: Si un número se guardó primero como preventivo (is_predicted = TRUE), pero luego el cliente Android lo reporta como una llamada real bloqueada, el estado debe actualizarse a is_predicted = FALSE mediante un DO UPDATE SET.
+
+Captura de métricas: Añadir RETURNING phone_number al final de la query para que el servicio sepa cuántos registros nuevos reales se insertaron en esa ejecución.
+
+🔹 Fase 4: Endpoints de la API (FastAPI)
+Con el core resuelto, el agente debe exponer la funcionalidad hacia el exterior mediante dos controladores POST bien definidos.
+
+Endpoint 1: Sincronización Android (/api/v1/reports/batch)
+
+
+Propósito: Recibir el lote periódico de números bloqueados localmente por los celulares.  
+YouTube
+
+Comportamiento: Toma el JSON, limpia los números, expande los rangos en memoria, ejecuta el UPSERT masivo y devuelve el estado al dispositivo.
+
+Endpoint 2: Panel de Administración (/api/v1/admin/seed-range)
+
+Propósito: Conectarse directamente a tu interfaz de usuario (UI/UX) para acelerar el seeding manual.
+
+Comportamiento: Recibe una única semilla desde la interfaz, calcula su bloque de 1.000 números y fuerza la inyección inmediata en la base de datos.
+
+🔹 Fase 5: Consultas de Telemetría para la UI
+Por último, el agente debe escribir las funciones que alimentarán los gráficos de tu panel de control para medir el éxito del algoritmo.
+
+Métrica A (Salud de la BD): Un conteo agrupado por is_predicted para saber cuántos números tenés bloqueados de manera "reactiva" (reportes) vs. cuántos de manera "predictiva" (preventivos).
+
+
+Métrica B (Hit-Rate de Éxito): Una query con un JOIN entre tu histórico de llamadas atajadas y la tabla maestra para calcular qué porcentaje de llamadas spam frenó tu app antes de que llegaran a molestar al usuario.  
+HTML
++ 2
+
+💡 Consejo para el traspaso: Copiá este roadmap tal cual en tu prompt o asistente de código y decile: "Acatá las restricciones de cada fase. Empecemos implementando únicamente la Fase 1 y mostrame el código resultante antes de avanzar". De esa manera lo mantenés enfocado y podés ir auditando el progreso del desarrollo.

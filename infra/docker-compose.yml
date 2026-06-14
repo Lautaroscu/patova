@@ -49,6 +49,10 @@ services:
       dockerfile: Dockerfile
     env_file:
       - ../backend/.env
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgresql+asyncpg://numguard:numguard@postgres:5432/numguard
+      - REDIS_URL=redis://redis:6379/0
     ports:
       - "8000:8000"
     depends_on:

@@ -77,7 +77,8 @@ async def number_lookup(
     e164: str,
     session: AsyncSession = Depends(get_session),
 ):
-    stmt = select(PhoneNumber).where(PhoneNumber.number_e164 == e164).limit(1)
+    phone_number_val = int(e164.lstrip("+"))
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == phone_number_val).limit(1)
     result = await session.execute(stmt)
     phone = result.scalar_one_or_none()
 
