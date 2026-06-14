@@ -39,13 +39,17 @@ class Settings(BaseSettings):
         if not v:
             return v
         if v.startswith("rediss://"):
-            # Celery exige el parámetro query 'ssl_cert_reqs' cuando el esquema es 'rediss://'.
-            # Upstash provee conexiones TLS seguras. Usamos 'CERT_NONE' por defecto para evitar 
-            # fallas en entornos contenedorizados/PaaS donde no suele estar configurada la CA local,
-            # pero permitimos que se especifique en la variable de entorno si el usuario lo desea.
+            # Para redis-py (utilizado por el cliente async de FastAPI), el parámetro
+            # 'ssl_cert_reqs' debe ser en minúsculas: 'none', 'optional', o 'required'.
+            # Si no está configurado, le agregamos 'ssl_cert_reqs=none' por defecto.
+            # Si ya está en mayúsculas (por ejemplo, 'CERT_NONE'), lo normalizamos a minúsculas.
             if "ssl_cert_reqs" not in v:
                 separator = "&" if "?" in v else "?"
-                v = f"{v}{separator}ssl_cert_reqs=CERT_NONE"
+                v = f"{v}{separator}ssl_cert_reqs=none"
+            else:
+                v = v.replace("ssl_cert_reqs=CERT_NONE", "ssl_cert_reqs=none")
+                v = v.replace("ssl_cert_reqs=CERT_REQUIRED", "ssl_cert_reqs=required")
+                v = v.replace("ssl_cert_reqs=CERT_OPTIONAL", "ssl_cert_reqs=optional")
         return v
 
 
