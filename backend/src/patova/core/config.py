@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,24 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     database_url: str = "postgresql+asyncpg://patova:patova@localhost:5432/patova"
     redis_url: str = "redis://localhost:6379/0"
+    cors_origins: str = "*"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str) -> str:
+        if not v:
+            return v
+        # Normalizar el protocolo para asegurar el uso del driver asíncrono asyncpg
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        
+        # asyncpg requiere 'ssl=require' en vez de 'sslmode=require'
+        if "sslmode=" in v:
+            v = v.replace("sslmode=req", "ssl=require").replace("sslmode=require", "ssl=require")
+        return v
+
 
     suspect_score_min: int = 21
     block_score_min: int = 61
