@@ -14,13 +14,19 @@ class TestNormalizeE164:
 
     def test_local_format_with_15(self):
         result = normalize_to_e164("15 6123 4567", region="AR")
-        assert result is not None
-        assert result.startswith("+54")
+        assert result == "+541161234567"
 
     def test_with_spaces_and_hyphens(self):
         result = normalize_to_e164("+54 351-123-4567")
-        assert result is not None
-        assert result.startswith("+54351")
+        assert result == "+543511234567"
+
+    def test_argentina_mobile_with_9(self):
+        assert normalize_to_e164("+54 9 11 6123 4567") == "+541161234567"
+        assert normalize_to_e164("+5493511234567") == "+543511234567"
+
+    def test_argentina_mobile_with_15_local_prefix(self):
+        assert normalize_to_e164("351 15 123 4567", region="AR") == "+543511234567"
+        assert normalize_to_e164("0351 15 123 4567", region="AR") == "+543511234567"
 
     def test_invalid_number_returns_none(self):
         assert normalize_to_e164("0000") is None

@@ -29,7 +29,13 @@ def normalize_to_e164(raw_number: str, region: str = _ARG_REGION) -> str | None:
         return None
     if not phonenumbers.is_valid_number(parsed) and not _is_plausible(parsed):
         return None
-    return phonenumbers.format_number(parsed, PhoneNumberFormat.E164)
+    formatted = phonenumbers.format_number(parsed, PhoneNumberFormat.E164)
+    if formatted.startswith("+54"):
+        if formatted.startswith("+549") and len(formatted) == 14:
+            formatted = "+54" + formatted[4:]
+        elif formatted.startswith("+5415") and len(formatted) == 13:
+            formatted = "+5411" + formatted[5:]
+    return formatted
 
 
 def _is_plausible(parsed: phonenumbers.PhoneNumber) -> bool:
@@ -37,11 +43,9 @@ def _is_plausible(parsed: phonenumbers.PhoneNumber) -> bool:
         return bool(phonenumbers.is_possible_number(parsed))
     national = str(parsed.national_number)
     length = len(national)
-    if length < 8 or length > 10:
-        return False
-    if national.startswith("9") and length not in (9, 10):
-        return False
-    return True
+    if national.startswith("9"):
+        return length == 11
+    return 8 <= length <= 10
 
 
 def extract_argentina_prefix(number_e164: str) -> str | None:
