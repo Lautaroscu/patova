@@ -33,13 +33,13 @@ async def clean_db():
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as s:
         # Limpieza de números de prueba antes
-        await s.execute(delete(Report).where(Report.phone_number.between(549111234000, 549111235999)))
-        await s.execute(delete(PhoneNumber).where(PhoneNumber.phone_number.between(549111234000, 549111235999)))
+        await s.execute(delete(Report).where((Report.phone_number.between(549111234000, 549111235999)) | (Report.phone_number.between(541112340000, 541112359999))))
+        await s.execute(delete(PhoneNumber).where((PhoneNumber.phone_number.between(549111234000, 549111235999)) | (PhoneNumber.phone_number.between(541112340000, 541112359999))))
         await s.commit()
         yield s
         # Limpieza después
-        await s.execute(delete(Report).where(Report.phone_number.between(549111234000, 549111235999)))
-        await s.execute(delete(PhoneNumber).where(PhoneNumber.phone_number.between(549111234000, 549111235999)))
+        await s.execute(delete(Report).where((Report.phone_number.between(549111234000, 549111235999)) | (Report.phone_number.between(541112340000, 541112359999))))
+        await s.execute(delete(PhoneNumber).where((PhoneNumber.phone_number.between(549111234000, 549111235999)) | (PhoneNumber.phone_number.between(541112340000, 541112359999))))
         await s.commit()
     await engine.dispose()
 
@@ -104,7 +104,7 @@ class TestApiEndpoints:
 
     async def test_admin_seed_range_endpoint(self, client: AsyncClient, clean_db):
         payload = {
-            "seed_number": "+549111235123"  # Base del millar: 549111235000
+            "seed_number": "+5491112351234"  # Base del millar: 549111235000
         }
 
         # Intentar sin API Key
@@ -116,8 +116,8 @@ class TestApiEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "success"
-        assert data["seed_procesado"] == 549111235123
-        assert data["bloque_base_calculado"] == 549111235000
+        assert data["seed_procesado"] == 541112351234
+        assert data["bloque_base_calculado"] == 541112351000
         assert data["registros_bd_impactados"] == 1000
 
     async def test_downloads_callkit_endpoint(self, client: AsyncClient, clean_db):
@@ -151,7 +151,7 @@ class TestApiEndpoints:
         import uuid
         dev_id = f"test-web-{uuid.uuid4()}"
         payload = {
-            "number": "+549111234999",
+            "number": "+5491112349999",
             "device_id": dev_id,
             "report_type": "SPAM_CALL",
             "description": "Llamada molesta de publicidad de prueba"
@@ -163,7 +163,7 @@ class TestApiEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "accepted"
-        assert data["number_e164"] == "+549111234999"
+        assert data["number_e164"] == "+541112349999"
 
         # 2. Re-enviar el mismo reporte (debe fallar por reporte duplicado con 429)
         response = await client.post("/v1/report/public", json=payload)

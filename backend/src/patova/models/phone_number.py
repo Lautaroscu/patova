@@ -27,6 +27,7 @@ class PhoneNumber(Base):
     status: Mapped[NumberStatus] = mapped_column(default=NumberStatus.UNVERIFIED)
     spam_score: Mapped[int] = mapped_column(SmallInteger, default=0)
     report_count: Mapped[int] = mapped_column(Integer, default=0)
+    import_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
     source: Mapped[NumberSource] = mapped_column(default=NumberSource.SEED)
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, default=dict)
     first_seen_at: Mapped[datetime] = mapped_column(

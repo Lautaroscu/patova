@@ -34,6 +34,10 @@ async def get_stats(session: AsyncSession) -> dict:
         )
     )
 
+    total_imports = await session.scalar(
+        select(func.sum(PhoneNumber.import_count))
+    ) or 0
+
     top_stmt = (
         select(PhoneNumber)
         .order_by(PhoneNumber.report_count.desc())
@@ -56,9 +60,35 @@ async def get_stats(session: AsyncSession) -> dict:
         for p in top_numbers
     ]
 
+    top_concurrence_stmt = (
+        select(PhoneNumber)
+        .where(PhoneNumber.import_count > 0)
+        .order_by(PhoneNumber.import_count.desc())
+        .limit(10)
+    )
+    top_concurrence_result = await session.execute(top_concurrence_stmt)
+    top_concurrence_numbers = top_concurrence_result.scalars().all()
+
+    top_concurrence = [
+        {
+            "number_e164": p.number_e164,
+            "number_e164_masked": mask_e164(p.number_e164),
+            "phone_number": p.phone_number,
+            "spam_score": p.spam_score,
+            "import_count": p.import_count,
+            "concurrency_percentage": round((p.import_count / total_imports) * 100, 2) if total_imports > 0 else 0.0,
+            "status": p.status.value if p.status else "UNVERIFIED",
+            "is_predicted": p.is_predicted,
+            "source": p.source.value if p.source else "SEED",
+        }
+        for p in top_concurrence_numbers
+    ]
+
     return {
         "total_numbers": total_numbers or 0,
         "total_reports": total_reports or 0,
         "blocked_today": blocked_today or 0,
+        "total_imports": total_imports,
         "top_reported": top_reported,
+        "top_concurrence": top_concurrence,
     }

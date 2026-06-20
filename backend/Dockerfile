@@ -43,4 +43,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 CMD python -c "import http.client, os; port = int(os.environ.get('PORT', '8080')); c = http.client.HTTPConnection('localhost', port); c.request('GET', '/health'); r = c.getresponse(); exit(0 if r.status == 200 else 1)" || exit 1
 
-CMD ["sh", "-c", "uvicorn patova.main:create_app --factory --host 0.0.0.0 --port ${PORT:-8080} --log-level info"]
+ENTRYPOINT ["/app/entrypoint.sh"]

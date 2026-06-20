@@ -95,7 +95,7 @@ class TestValidateEndpoint:
         response = await client.post(
             "/v1/validate",
             json={
-                "number": "+541552222222",
+                "number": "+5499999999999",
                 "device_id": "test_device_5",
                 "call_direction": "INCOMING",
             },

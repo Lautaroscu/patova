@@ -91,6 +91,29 @@ async def test_import_spam_numbers(session: AsyncSession):
     assert row.spam_score == 90
 
 
+async def test_import_suspect_numbers(session: AsyncSession):
+    _run_seed_command(
+        "import-prefixes",
+        "--file",
+        str(REPO_ROOT / "scripts" / "data_samples" / "prefixes_sample.csv"),
+    )
+
+    result = _run_seed_command(
+        "import-numbers",
+        "--file",
+        str(REPO_ROOT / "scripts" / "data_samples" / "numbers_suspect_sample.csv"),
+        "--default-status",
+        "SUSPECT",
+    )
+    assert "Numbers:" in result.stdout, result.stderr
+
+    stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 543515555555)
+    row = (await session.execute(stmt)).scalar_one_or_none()
+    assert row is not None
+    assert row.status == NumberStatus.SUSPECT
+    assert row.spam_score == 50
+
+
 async def test_idempotent_prefix_import(session: AsyncSession):
     prefixes_file = str(REPO_ROOT / "scripts" / "data_samples" / "prefixes_sample.csv")
     _run_seed_command("import-prefixes", "--file", prefixes_file)

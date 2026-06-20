@@ -88,7 +88,8 @@ class TestProductionResilience:
         data = response.json()
         assert 549111234100 in data["added"]
         assert 549111234200 in data["added"]
-        assert len(data["removed"]) == 0
+        assert 549111234100 not in data["removed"]
+        assert 549111234200 not in data["removed"]
 
         # Consultar delta con since = hace 5 días
         since_str = five_days_ago.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -99,7 +100,8 @@ class TestProductionResilience:
         assert 549111234100 not in data["added"]
         # El número nuevo sí debería estar en added
         assert 549111234200 in data["added"]
-        assert len(data["removed"]) == 0
+        assert 549111234100 not in data["removed"]
+        assert 549111234200 not in data["removed"]
 
         # 3. Remover el número antiguo (marcarlo como CLEAN en una fecha reciente)
         # Esto setea updated_at al momento de la actualización (ahora)

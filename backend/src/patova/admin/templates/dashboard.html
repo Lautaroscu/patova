@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,38 +17,98 @@
             transition: border-color .2s, background .2s;
             position: relative;
         }
-        .import-zone:hover, .import-zone.dragover {
+
+        .import-zone:hover,
+        .import-zone.dragover {
             border-color: #3b82f6;
-            background: rgba(59,130,246,.06);
+            background: rgba(59, 130, 246, .06);
         }
+
         .import-zone input[type="file"] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
         }
-        .import-zone-label { font-size: .85rem; color: #94a3b8; pointer-events: none; }
-        .import-zone-label strong { color: #e2e8f0; }
+
+        .import-zone-label {
+            font-size: .85rem;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+
+        .import-zone-label strong {
+            color: #e2e8f0;
+        }
+
         .badge {
-            display: inline-block; padding: 2px 8px; border-radius: 99px;
-            font-size: .75rem; font-weight: 600; letter-spacing: .3px;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .3px;
         }
-        .badge-spam { background: #7f1d1d; color: #fca5a5; }
-        .badge-seed { background: #1e3a5f; color: #93c5fd; }
-        .badge-crowd { background: #3b1f5e; color: #d8b4fe; }
-        .badge-pred { background: #1c3d26; color: #86efac; }
+
+        .badge-spam {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .badge-seed {
+            background: #1e3a5f;
+            color: #93c5fd;
+        }
+
+        .badge-crowd {
+            background: #3b1f5e;
+            color: #d8b4fe;
+        }
+
+        .badge-pred {
+            background: #1c3d26;
+            color: #86efac;
+        }
+
         .result-box {
-            background: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
-            padding: 1rem; font-family: monospace; font-size: .82rem;
-            white-space: pre-wrap; word-break: break-all; color: #94a3b8;
-            max-height: 180px; overflow-y: auto; margin-top: .75rem;
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: .82rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: #94a3b8;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: .75rem;
         }
-        .section-actions { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
-        table th, table td { white-space: nowrap; }
+
+        .section-actions {
+            display: flex;
+            gap: .6rem;
+            flex-wrap: wrap;
+            margin-top: .8rem;
+        }
+
+        table th,
+        table td {
+            white-space: nowrap;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <h1>Patova Admin</h1>
         <span class="version">Panel de Control · {{ api_version | default('v1') }}</span>
     </header>
+<nav class="admin-nav">
+  <button id="navMetrics" class="nav-btn active">Métricas</button>
+  <button id="navBlock" class="nav-btn">Bloquear Números</button>
+</nav>
 
     <main>
         <!-- ── Métricas ── -->
@@ -59,6 +120,10 @@
             <div class="card">
                 <h3>Total de Reportes</h3>
                 <p class="value">{{ total_reports | default(0) }}</p>
+            </div>
+            <div class="card">
+                <h3>Total Importaciones</h3>
+                <p class="value">{{ total_imports | default(0) }}</p>
             </div>
             <div class="card">
                 <h3>Bloqueados Hoy</h3>
@@ -78,10 +143,12 @@
                         <label for="apiKey">API Key</label>
                         <div class="input-with-action">
                             <input type="password" id="apiKey" value="{{ api_key }}" autocomplete="off" readonly
-                                   style="opacity:.6;cursor:default;">
-                            <button type="button" id="toggleKeyBtn" class="action-btn-mini" title="Mostrar/Ocultar">👁️</button>
+                                style="opacity:.6;cursor:default;">
+                            <button type="button" id="toggleKeyBtn" class="action-btn-mini"
+                                title="Mostrar/Ocultar">👁️</button>
                         </div>
-                        <span class="help-text">✓ Autenticado — la key se inyecta automáticamente desde la sesión.</span>
+                        <span class="help-text">✓ Autenticado — la key se inyecta automáticamente desde la
+                            sesión.</span>
                     </div>
 
                     <hr class="divider">
@@ -91,7 +158,8 @@
                         <div class="input-group">
                             <label for="seedNumber">Número Semilla (SPAM)</label>
                             <input type="text" id="seedNumber" placeholder="Ej: +5491112345678" required>
-                            <span class="help-text">Expande predictivamente un bloque de 1.000 números alrededor de la semilla.</span>
+                            <span class="help-text">Expande predictivamente un bloque de 1.000 números alrededor de la
+                                semilla.</span>
                         </div>
                         <button type="submit" id="seedSubmitBtn" class="btn btn-primary">Bloquear Rango</button>
                     </form>
@@ -123,7 +191,8 @@
                     <div class="action-group">
                         <label>Mantenimiento</label>
                         <button id="pruneBtn" class="btn btn-secondary">Purgar Predictivos Antiguos</button>
-                        <span class="help-text">Elimina números predictivos de más de 6 meses sin hits acumulados.</span>
+                        <span class="help-text">Elimina números predictivos de más de 6 meses sin hits
+                            acumulados.</span>
                     </div>
 
                     <hr class="divider">
@@ -139,40 +208,78 @@
                 </div>
             </aside>
 
-            <!-- ── Tabla de números más reportados ── -->
-            <section class="table-section">
-                <h2>Top 10 Números Más Reportados</h2>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Número E.164</th>
-                                <th>Score</th>
-                                <th>Reportes</th>
-                                <th>Estado</th>
-                                <th>Fuente</th>
-                                <th>Predictivo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if top_reported %}
-                            {% for item in top_reported %}
-                            <tr>
-                                <td><code>{{ item.number_e164 }}</code></td>
-                                <td><strong>{{ item.spam_score }}</strong></td>
-                                <td>{{ item.report_count }}</td>
-                                <td class="status-{{ item.status | lower }}">{{ item.status }}</td>
-                                <td>{{ item.source }}</td>
-                                <td>{{ '✓' if item.is_predicted else '—' }}</td>
-                            </tr>
-                            {% endfor %}
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="empty">Todavía no hay números reportados.</td>
-                            </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+            <!-- ── Tablas de visualización de datos ── -->
+            <section class="table-section" style="display: flex; flex-direction: column; gap: 2rem;">
+                <div>
+                    <h2>Top 10 Números Más Reportados (Crowdsourcing)</h2>
+                    <div class="table-container">
+                        <table id="topReportedTable">
+                            <thead>
+                                <tr>
+                                    <th>Número E.164</th>
+                                    <th>Score</th>
+                                    <th>Reportes</th>
+                                    <th>Estado</th>
+                                    <th>Fuente</th>
+                                    <th>Predictivo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if top_reported %}
+                                {% for item in top_reported %}
+                                <tr>
+                                    <td><code>{{ item.number_e164 }}</code></td>
+                                    <td><strong>{{ item.spam_score }}</strong></td>
+                                    <td>{{ item.report_count }}</td>
+                                    <td class="status-{{ item.status | lower }}">{{ item.status }}</td>
+                                    <td>{{ item.source }}</td>
+                                    <td>{{ '✓' if item.is_predicted else '—' }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="empty">Todavía no hay números reportados.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h2>Top 10 Semillas con Mayor Concurrencia (Importaciones)</h2>
+                    <div class="table-container">
+                        <table id="topConcurrenceTable">
+                            <thead>
+                                <tr>
+                                    <th>Número E.164</th>
+                                    <th>Score</th>
+                                    <th>Importaciones</th>
+                                    <th>Concurrencia</th>
+                                    <th>Estado</th>
+                                    <th>Fuente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if top_concurrence %}
+                                {% for item in top_concurrence %}
+                                <tr>
+                                    <td><code>{{ item.number_e164 }}</code></td>
+                                    <td><strong>{{ item.spam_score }}</strong></td>
+                                    <td>{{ item.import_count }}</td>
+                                    <td><strong style="color: #3b82f6;">{{ item.concurrency_percentage }}%</strong></td>
+                                    <td class="status-{{ item.status | lower }}">{{ item.status }}</td>
+                                    <td>{{ item.source }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="empty">Todavía no hay semillas importadas.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </div>
@@ -184,18 +291,18 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const apiKeyInput    = document.getElementById('apiKey');
-            const toggleKeyBtn   = document.getElementById('toggleKeyBtn');
-            const seedForm       = document.getElementById('seedForm');
-            const seedNumberInput= document.getElementById('seedNumber');
-            const seedSubmitBtn  = document.getElementById('seedSubmitBtn');
-            const pruneBtn       = document.getElementById('pruneBtn');
-            const exportBtn      = document.getElementById('exportBtn');
-            const importZone     = document.getElementById('importZone');
-            const csvFileInput   = document.getElementById('csvFileInput');
-            const importBtn      = document.getElementById('importBtn');
-            const importResult   = document.getElementById('importResult');
-            const alertBox       = document.getElementById('alertBox');
+            const apiKeyInput = document.getElementById('apiKey');
+            const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+            const seedForm = document.getElementById('seedForm');
+            const seedNumberInput = document.getElementById('seedNumber');
+            const seedSubmitBtn = document.getElementById('seedSubmitBtn');
+            const pruneBtn = document.getElementById('pruneBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const importZone = document.getElementById('importZone');
+            const csvFileInput = document.getElementById('csvFileInput');
+            const importBtn = document.getElementById('importBtn');
+            const importResult = document.getElementById('importResult');
+            const alertBox = document.getElementById('alertBox');
 
             // ── API Key: ya viene pre-cargada desde el servidor (readonly) ────
             toggleKeyBtn.addEventListener('click', () => {
@@ -309,9 +416,9 @@
                     }
                     // Disparar descarga
                     const blob = await res.blob();
-                    const url  = URL.createObjectURL(blob);
-                    const a    = document.createElement('a');
-                    a.href     = url;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
                     a.download = 'patova_spam_export.csv';
                     a.click();
                     URL.revokeObjectURL(url);
@@ -381,7 +488,7 @@
                             + `Registros expandidos:     ${data.registros_expandidos}\n`
                             + `Registros nuevos en BD:   ${data.registros_nuevos_en_bd}\n`
                             + (data.errores_de_formato?.length
-                                ? `Errores de formato (${data.errores_de_formato.length}): ${data.errores_de_formato.slice(0,5).join(', ')}…`
+                                ? `Errores de formato (${data.errores_de_formato.length}): ${data.errores_de_formato.slice(0, 5).join(', ')}…`
                                 : 'Sin errores de formato.');
                         setTimeout(() => location.reload(), 3000);
                     }
@@ -396,5 +503,39 @@
             });
         });
     </script>
+    <script>
+        /* Sortable tables */
+        function sortTable(tableId, colIdx) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.tBodies[0];
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const compare = (a, b) => {
+                const aText = a.cells[colIdx].textContent.trim();
+                const bText = b.cells[colIdx].textContent.trim();
+                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+                if (!isNaN(aNum) && !isNaN(bNum)) {
+                    return bNum - aNum; // descending
+                }
+                return bText.localeCompare(aText);
+            };
+            rows.sort(compare);
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            ['topReportedTable', 'topConcurrenceTable'].forEach(tableId => {
+                const table = document.getElementById(tableId);
+                if (!table) return;
+                const ths = table.querySelectorAll('thead th');
+                ths.forEach((th, idx) => {
+                    th.style.cursor = 'pointer';
+                    th.title = 'Ordenar descendente';
+                    th.addEventListener('click', () => sortTable(tableId, idx));
+                });
+            });
+        });
+    </script>
 </body>
+
 </html>

@@ -54,6 +54,7 @@ async def manual_admin_seed(
                 "status": NumberStatus.SPAM,
                 "spam_score": 90,
                 "source": NumberSource.SEED,
+                "import_count": 0 if is_pred else 1,
             })
 
         stmt = pg_insert(PhoneNumber).values(insert_values)
@@ -63,6 +64,7 @@ async def manual_admin_seed(
                 "is_predicted": stmt.excluded.is_predicted,
                 "status": stmt.excluded.status,
                 "spam_score": stmt.excluded.spam_score,
+                "import_count": PhoneNumber.import_count + stmt.excluded.import_count,
                 "updated_at": func.now(),
             }
         )
@@ -208,6 +210,7 @@ async def import_spam_csv(
                 "status": NumberStatus.SPAM,
                 "spam_score": 90,
                 "source": NumberSource.SEED,
+                "import_count": 0 if is_pred else 1,
             }
             for num, is_pred in processed_data
         ]
@@ -224,6 +227,7 @@ async def import_spam_csv(
                     "is_predicted": stmt.excluded.is_predicted,
                     "status": stmt.excluded.status,
                     "spam_score": stmt.excluded.spam_score,
+                    "import_count": PhoneNumber.import_count + stmt.excluded.import_count,
                     "updated_at": func.now(),
                 }
             )
