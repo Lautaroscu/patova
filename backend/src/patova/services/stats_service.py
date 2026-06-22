@@ -84,6 +84,48 @@ async def get_stats(session: AsyncSession) -> dict:
         for p in top_concurrence_numbers
     ]
 
+    # 1. Status Distribution
+    status_counts = await session.execute(
+        select(PhoneNumber.status, func.count(PhoneNumber.phone_number))
+        .group_by(PhoneNumber.status)
+    )
+    status_dist = {status.value if hasattr(status, "value") else str(status): count for status, count in status_counts.all()}
+
+    # 2. Source Distribution
+    source_counts = await session.execute(
+        select(PhoneNumber.source, func.count(PhoneNumber.phone_number))
+        .group_by(PhoneNumber.source)
+    )
+    source_dist = {source.value if hasattr(source, "value") else str(source): count for source, count in source_counts.all()}
+
+    # 3. Report Type Distribution
+    report_type_counts = await session.execute(
+        select(Report.report_type, func.count(Report.id))
+        .group_by(Report.report_type)
+    )
+    report_dist = {rt.value if hasattr(rt, "value") else str(rt): count for rt, count in report_type_counts.all()}
+
+    # 4. Reports over the last 7 days
+    from datetime import timedelta
+    seven_days_ago = today_start - timedelta(days=7)
+    reports_by_day = await session.execute(
+        select(func.date(Report.created_at), func.count(Report.id))
+        .where(Report.created_at >= seven_days_ago)
+        .group_by(func.date(Report.created_at))
+        .order_by(func.date(Report.created_at))
+    )
+    reports_history = {str(day): count for day, count in reports_by_day.all()}
+    
+    history_labels = []
+    history_values = []
+    for i in range(6, -1, -1):
+        day = (today_start - timedelta(days=i)).date()
+        day_str = day.strftime("%Y-%m-%d")
+        label_str = day.strftime("%d/%m")
+        count = reports_history.get(day_str) or 0
+        history_labels.append(label_str)
+        history_values.append(count)
+
     return {
         "total_numbers": total_numbers or 0,
         "total_reports": total_reports or 0,
@@ -91,4 +133,9 @@ async def get_stats(session: AsyncSession) -> dict:
         "total_imports": total_imports,
         "top_reported": top_reported,
         "top_concurrence": top_concurrence,
+        "status_dist": status_dist,
+        "source_dist": source_dist,
+        "report_dist": report_dist,
+        "history_labels": history_labels,
+        "history_values": history_values,
     }

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patova — Panel Administrativo</title>
     <link rel="stylesheet" href="/admin/static/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ── Mejoras inline para las secciones nuevas ── */
         .import-zone {
@@ -106,34 +107,64 @@
         <span class="version">Panel de Control · {{ api_version | default('v1') }}</span>
     </header>
 <nav class="admin-nav">
-  <button id="navMetrics" class="nav-btn active">Métricas</button>
-  <button id="navBlock" class="nav-btn">Bloquear Números</button>
+  <button id="navMetrics" class="nav-btn active">📊 Métricas</button>
+  <button id="navBlock" class="nav-btn">🚫 Bloquear Números</button>
 </nav>
 
     <main>
-        <!-- ── Métricas ── -->
-        <section class="cards">
-            <div class="card">
-                <h3>Total de Números</h3>
-                <p class="value">{{ total_numbers | default(0) }}</p>
-            </div>
-            <div class="card">
-                <h3>Total de Reportes</h3>
-                <p class="value">{{ total_reports | default(0) }}</p>
-            </div>
-            <div class="card">
-                <h3>Total Importaciones</h3>
-                <p class="value">{{ total_imports | default(0) }}</p>
-            </div>
-            <div class="card">
-                <h3>Bloqueados Hoy</h3>
-                <p class="value blocked">{{ blocked_today | default(0) }}</p>
-            </div>
-        </section>
+        <!-- ── Metrics View (Cards & Charts) ── -->
+        <div id="metricsView">
+            <section class="cards">
+                <div class="card">
+                    <h3>Total de Números</h3>
+                    <p class="value">{{ total_numbers | default(0) }}</p>
+                </div>
+                <div class="card">
+                    <h3>Total de Reportes</h3>
+                    <p class="value">{{ total_reports | default(0) }}</p>
+                </div>
+                <div class="card">
+                    <h3>Total Importaciones</h3>
+                    <p class="value">{{ total_imports | default(0) }}</p>
+                </div>
+                <div class="card">
+                    <h3>Bloqueados Hoy</h3>
+                    <p class="value blocked">{{ blocked_today | default(0) }}</p>
+                </div>
+            </section>
+
+            <!-- ── Gráficos de Métricas ── -->
+            <section class="charts-section">
+                <div class="chart-card wide">
+                    <h3>Reportes en los Últimos 7 Días</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="reportsTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Reportes por Tipo</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="reportTypesChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>Distribución de Números por Estado</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="numberStatusChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card wide">
+                    <h3>Distribución por Fuente de Datos</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="numberSourceChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </div>
 
         <div class="dashboard-grid">
             <!-- ── Panel de Control ── -->
-            <aside class="controls-panel">
+            <aside class="controls-panel" id="controlsView">
                 <div class="card">
                     <h2>Panel de Control</h2>
                     <p class="section-desc">Acciones administrativas del sistema</p>
@@ -209,7 +240,7 @@
             </aside>
 
             <!-- ── Tablas de visualización de datos ── -->
-            <section class="table-section" style="display: flex; flex-direction: column; gap: 2rem;">
+            <section class="table-section" id="tablesView" style="display: flex; flex-direction: column; gap: 2rem;">
                 <div>
                     <h2>Top 10 Números Más Reportados (Crowdsourcing)</h2>
                     <div class="table-container">
@@ -501,6 +532,191 @@
                     importBtn.textContent = orig;
                 }
             });
+
+            // ── Datos para los gráficos desde Jinja2 ──────────────────────────
+            const historyLabels = {{ history_labels | default([]) | tojson }};
+            const historyValues = {{ history_values | default([]) | tojson }};
+            const statusDist = {{ status_dist | default({}) | tojson }};
+            const sourceDist = {{ source_dist | default({}) | tojson }};
+            const reportDist = {{ report_dist | default({}) | tojson }};
+
+            // 1. Gráfico de Tendencia de Reportes (Línea)
+            const ctxTrend = document.getElementById('reportsTrendChart').getContext('2d');
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: historyLabels,
+                    datasets: [{
+                        label: 'Reportes Diarios',
+                        data: historyValues,
+                        borderColor: '#58a6ff',
+                        backgroundColor: 'rgba(88, 166, 255, 0.12)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#58a6ff',
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(48, 54, 61, 0.3)' },
+                            ticks: { color: '#8b949e', stepSize: 1 }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8b949e' }
+                        }
+                    }
+                }
+            });
+
+            const getChartData = (obj) => {
+                const keys = Object.keys(obj);
+                const values = Object.values(obj);
+                return { keys, values };
+            };
+
+            // 2. Gráfico de Tipos de Reportes (Doughnut)
+            const reportData = getChartData(reportDist);
+            const ctxTypes = document.getElementById('reportTypesChart').getContext('2d');
+            new Chart(ctxTypes, {
+                type: 'doughnut',
+                data: {
+                    labels: reportData.keys,
+                    datasets: [{
+                        data: reportData.values,
+                        backgroundColor: ['#58a6ff', '#ff7b72', '#7ee787', '#d29922', '#bc8cff'],
+                        borderWidth: 1,
+                        borderColor: '#0d1117'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#8b949e', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            // 3. Gráfico de Distribución de Estado (Pie)
+            const statusData = getChartData(statusDist);
+            const statusColors = statusData.keys.map(k => {
+                if (k === 'SPAM') return '#ff7b72';
+                if (k === 'SUSPECT') return '#d29922';
+                if (k === 'CLEAN') return '#56d364';
+                return '#8b949e';
+            });
+            const ctxStatus = document.getElementById('numberStatusChart').getContext('2d');
+            new Chart(ctxStatus, {
+                type: 'pie',
+                data: {
+                    labels: statusData.keys,
+                    datasets: [{
+                        data: statusData.values,
+                        backgroundColor: statusColors,
+                        borderWidth: 1,
+                        borderColor: '#0d1117'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#8b949e', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+
+            // 4. Gráfico de Fuentes de Datos (Barra horizontal)
+            const sourceData = getChartData(sourceDist);
+            const ctxSource = document.getElementById('numberSourceChart').getContext('2d');
+            new Chart(ctxSource, {
+                type: 'bar',
+                data: {
+                    labels: sourceData.keys,
+                    datasets: [{
+                        label: 'Cantidad de Números',
+                        data: sourceData.values,
+                        backgroundColor: 'rgba(188, 140, 255, 0.7)',
+                        borderColor: '#bc8cff',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(48, 54, 61, 0.3)' },
+                            ticks: { color: '#8b949e' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#8b949e' }
+                        }
+                    }
+                }
+            });
+
+            // ── Lógica de Navegación (Tabs) ──────────────────────────────────
+            const navMetrics = document.getElementById('navMetrics');
+            const navBlock = document.getElementById('navBlock');
+            
+            const metricsView = document.getElementById('metricsView');
+            const controlsView = document.getElementById('controlsView');
+            const tablesView = document.getElementById('tablesView');
+            const dashboardGrid = document.querySelector('.dashboard-grid');
+
+            function switchTab(activeTab) {
+                if (activeTab === 'metrics') {
+                    navMetrics.classList.add('active');
+                    navBlock.classList.remove('active');
+                    
+                    metricsView.classList.remove('tab-content-hidden');
+                    tablesView.classList.remove('tab-content-hidden');
+                    controlsView.classList.add('tab-content-hidden');
+                    
+                    controlsView.classList.remove('controls-centered');
+                    dashboardGrid.style.gridTemplateColumns = '1fr';
+                } else {
+                    navMetrics.classList.remove('active');
+                    navBlock.classList.add('active');
+                    
+                    metricsView.classList.add('tab-content-hidden');
+                    tablesView.classList.add('tab-content-hidden');
+                    controlsView.classList.remove('tab-content-hidden');
+                    
+                    controlsView.classList.add('controls-centered');
+                    dashboardGrid.style.gridTemplateColumns = '1fr';
+                }
+            }
+
+            navMetrics.addEventListener('click', () => switchTab('metrics'));
+            navBlock.addEventListener('click', () => switchTab('block'));
+
+            // Initial view
+            switchTab('metrics');
         });
     </script>
     <script>
