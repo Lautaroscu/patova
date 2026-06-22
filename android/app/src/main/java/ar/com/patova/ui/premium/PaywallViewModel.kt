@@ -25,7 +25,8 @@ data class PaywallUiState(
     val errorMessage: String? = null,
     val subscriptionStatus: String? = null,
     val expiresAtFormatted: String? = null,
-    val premiumAvailableOffline: Boolean = false
+    val premiumAvailableOffline: Boolean = false,
+    val trialDaysRemaining: Int = 0
 )
 
 @HiltViewModel
@@ -47,9 +48,10 @@ class PaywallViewModel @Inject constructor(
         val offlineAvailable = premiumCache.premiumAvailableOffline
         val offlinePremium = if (offlineAvailable) premiumCache.isPremium else false
         _uiState.value = _uiState.value.copy(
-            isPremium = offlinePremium,
-            subscriptionStatus = if (offlinePremium) "ACTIVE (offline)" else null,
-            premiumAvailableOffline = offlineAvailable
+            isPremium = offlinePremium || premiumCache.isTrialActive,
+            subscriptionStatus = if (premiumCache.isTrialActive) "TRIAL" else (if (offlinePremium) "ACTIVE (offline)" else null),
+            premiumAvailableOffline = offlineAvailable,
+            trialDaysRemaining = premiumCache.trialDaysRemaining
         )
     }
 
@@ -83,7 +85,14 @@ class PaywallViewModel @Inject constructor(
                     userId = response.userId
                 )
 
-                val expiresFormatted = if (sub?.expiresAt != null) {
+                val expiresFormatted = if (premiumCache.isTrialActive) {
+                    try {
+                        val outFmt = SimpleDateFormat("dd/MM/yyyy", Locale.US)
+                        outFmt.format(java.util.Date(premiumCache.expiresAtMillis))
+                    } catch (_: Exception) {
+                        null
+                    }
+                } else if (sub?.expiresAt != null) {
                     try {
                         val iso = sub.expiresAt.substringBefore("+").substringBefore("Z")
                         val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
@@ -97,18 +106,21 @@ class PaywallViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    isPremium = isPremium,
-                    subscriptionStatus = sub?.status,
+                    isPremium = isPremium || premiumCache.isTrialActive,
+                    subscriptionStatus = if (premiumCache.isTrialActive) "TRIAL" else sub?.status,
                     expiresAtFormatted = expiresFormatted,
-                    premiumAvailableOffline = premiumCache.premiumAvailableOffline
+                    premiumAvailableOffline = premiumCache.premiumAvailableOffline,
+                    trialDaysRemaining = premiumCache.trialDaysRemaining
                 )
             } catch (e: Exception) {
                 val offlineAvailable = premiumCache.premiumAvailableOffline
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = if (offlineAvailable) null else "Sin conexion. Verifica tu internet.",
-                    isPremium = offlineAvailable && premiumCache.isPremium,
-                    premiumAvailableOffline = offlineAvailable
+                    errorMessage = if (offlineAvailable || premiumCache.isTrialActive) null else "Sin conexion. Verifica tu internet.",
+                    isPremium = (offlineAvailable && premiumCache.isPremium) || premiumCache.isTrialActive,
+                    premiumAvailableOffline = offlineAvailable || premiumCache.isTrialActive,
+                    subscriptionStatus = if (premiumCache.isTrialActive) "TRIAL" else _uiState.value.subscriptionStatus,
+                    trialDaysRemaining = premiumCache.trialDaysRemaining
                 )
             }
         }
@@ -119,7 +131,7 @@ class PaywallViewModel @Inject constructor(
             val deviceId = deviceIdProvider.getDeviceIdHash()
             "usr_${deviceId.takeLast(12)}"
         }
-        val email = premiumCache.userEmail.ifEmpty { "user@example.com" }
+        val email = premiumCache.userEmail.ifEmpty { "${userId}@patova.com" }
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)

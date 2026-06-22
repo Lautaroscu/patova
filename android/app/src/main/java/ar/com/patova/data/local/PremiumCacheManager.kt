@@ -55,16 +55,51 @@ class PremiumCacheManager @Inject constructor(
         private const val PREFS_FILE_NAME = "patova_premium_secure_prefs"
     }
 
+    val installTime: Long
+        get() {
+            var time = prefs.getLong("first_install_time", 0L)
+            if (time == 0L) {
+                time = System.currentTimeMillis()
+                prefs.edit().putLong("first_install_time", time).apply()
+            }
+            return time
+        }
+
+    val isTrialActive: Boolean
+        get() {
+            val now = System.currentTimeMillis()
+            val fifteenDaysMs = 15L * 24 * 60 * 60 * 1000
+            return (now - installTime) <= fifteenDaysMs
+        }
+
+    val trialDaysRemaining: Int
+        get() {
+            val now = System.currentTimeMillis()
+            val fifteenDaysMs = 15L * 24 * 60 * 60 * 1000
+            val timeElapsed = now - installTime
+            val timeLeft = fifteenDaysMs - timeElapsed
+            if (timeLeft <= 0) return 0
+            return (timeLeft / (24L * 60 * 60 * 1000)).toInt()
+        }
+
     var isPremium: Boolean
-        get() = prefs.getBoolean("is_premium", false)
+        get() = prefs.getBoolean("is_premium", false) || isTrialActive
         private set(value) = prefs.edit().putBoolean("is_premium", value).apply()
 
     var subscriptionStatus: String
-        get() = prefs.getString("subscription_status", "INACTIVE") ?: "INACTIVE"
+        get() {
+            if (isTrialActive) return "TRIAL"
+            return prefs.getString("subscription_status", "INACTIVE") ?: "INACTIVE"
+        }
         private set(value) = prefs.edit().putString("subscription_status", value).apply()
 
     var expiresAtMillis: Long
-        get() = prefs.getLong("expires_at_millis", 0L)
+        get() {
+            if (isTrialActive) {
+                return installTime + (15L * 24 * 60 * 60 * 1000)
+            }
+            return prefs.getLong("expires_at_millis", 0L)
+        }
         private set(value) = prefs.edit().putLong("expires_at_millis", value).apply()
 
     var lastSyncMillis: Long
@@ -81,6 +116,7 @@ class PremiumCacheManager @Inject constructor(
 
     val premiumAvailableOffline: Boolean
         get() {
+            if (isTrialActive) return true
             if (!isPremium) return false
             if (subscriptionStatus != "ACTIVE") return false
             val now = System.currentTimeMillis()

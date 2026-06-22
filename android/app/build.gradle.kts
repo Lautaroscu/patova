@@ -17,7 +17,7 @@ val localProperties = Properties().apply {
 
 val rawApiKey = localProperties.getProperty("PATOVA_API_KEY")
     ?: System.getenv("PATOVA_API_KEY")
-    ?: "dev-dummy-key"
+    ?: "dummy"
 
 val patovaApiKey = if (rawApiKey.startsWith("\"") && rawApiKey.endsWith("\"")) {
     rawApiKey
@@ -27,7 +27,7 @@ val patovaApiKey = if (rawApiKey.startsWith("\"") && rawApiKey.endsWith("\"")) {
 
 val rawDebugBaseUrl = localProperties.getProperty("PATOVA_DEBUG_API_BASE_URL")
     ?: System.getenv("PATOVA_DEBUG_API_BASE_URL")
-    ?: "https://699b-152-170-2-32.ngrok-free.app/"
+    ?: "https://patova-api-253350661454.southamerica-east1.run.app/"
 
 val patovaDebugBaseUrl = if (rawDebugBaseUrl.startsWith("\"") && rawDebugBaseUrl.endsWith("\"")) {
     rawDebugBaseUrl

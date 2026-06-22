@@ -98,6 +98,26 @@
         table td {
             white-space: nowrap;
         }
+
+        /* Monotributo progress bar and text states */
+        .text-danger { color: #ff7b72 !important; }
+        .text-warning { color: #d29922 !important; }
+        .text-success { color: #56d364 !important; }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.5s ease;
+        }
+        .progress-danger {
+            background: linear-gradient(90deg, #ff7b72, #f85149);
+        }
+        .progress-warning {
+            background: linear-gradient(90deg, #d29922, #e3b341);
+        }
+        .progress-success {
+            background: linear-gradient(90deg, #56d364, #3ea751);
+        }
     </style>
 </head>
 
@@ -159,7 +179,11 @@
                     <div class="chart-wrapper">
                         <canvas id="numberSourceChart"></canvas>
                     </div>
-                        <!-- ── Payments View (Revenue Cards & Payments Table) ── -->
+                </div>
+            </section>
+        </div>
+
+        <!-- ── Payments View (Revenue Cards & Payments Table) ── -->
         <div id="paymentsView" class="tab-content-hidden">
             <section class="cards">
                 <div class="card">
@@ -208,7 +232,7 @@
                     </div>
                     <div>
                         <span class="help-text">Cupo Restante</span>
-                        <p style="font-size: 1.6rem; font-weight: 700; color: {% if monotributo_porcentaje > 90 %}#ff7b72{% elif monotributo_porcentaje > 75 %}#d29922{% else %}#56d364{% endif %}; margin-top: 0.25rem;">
+                        <p style="font-size: 1.6rem; font-weight: 700; margin-top: 0.25rem;" class="{% if monotributo_porcentaje > 90 %}text-danger{% elif monotributo_porcentaje > 75 %}text-warning{% else %}text-success{% endif %}">
                             ${{ monotributo_restante | default(0) | int }}
                         </p>
                     </div>
@@ -218,12 +242,12 @@
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <span class="help-text" style="font-weight: 600;">Porcentaje Consumido del Límite</span>
-                        <span style="font-size: 0.85rem; font-weight: 700; color: {% if monotributo_porcentaje > 90 %}#ff7b72{% elif monotributo_porcentaje > 75 %}#d29922{% else %}#56d364{% endif %};">
+                        <span style="font-size: 0.85rem; font-weight: 700;" class="{% if monotributo_porcentaje > 90 %}text-danger{% elif monotributo_porcentaje > 75 %}text-warning{% else %}text-success{% endif %}">
                             {{ monotributo_porcentaje }}%
                         </span>
                     </div>
                     <div style="width: 100%; height: 10px; background: #161b22; border-radius: 99px; overflow: hidden; border: 1px solid #30363d;">
-                        <div style="width: {{ monotributo_porcentaje }}%; height: 100%; border-radius: 99px; background: {% if monotributo_porcentaje > 90 %}linear-gradient(90deg, #ff7b72, #f85149){% elif monotributo_porcentaje > 75 %}linear-gradient(90deg, #d29922, #e3b341){% else %}linear-gradient(90deg, #56d364, #3ea751){% endif %}; transition: width 0.5s ease;"></div>
+                        <div class="progress-fill {% if monotributo_porcentaje > 90 %}progress-danger{% elif monotributo_porcentaje > 75 %}progress-warning{% else %}progress-success{% endif %}" data-width="{{ monotributo_porcentaje | default(0) }}"></div>
                     </div>
                 </div>
 
@@ -708,11 +732,11 @@
             });
 
             // ── Datos para los gráficos desde Jinja2 ──────────────────────────
-            const historyLabels = {{ history_labels | default([]) | tojson }};
-            const historyValues = {{ history_values | default([]) | tojson }};
-            const statusDist = {{ status_dist | default({}) | tojson }};
-            const sourceDist = {{ source_dist | default({}) | tojson }};
-            const reportDist = {{ report_dist | default({}) | tojson }};
+            const historyLabels = JSON.parse('{{ history_labels | default([]) | tojson | safe }}');
+            const historyValues = JSON.parse('{{ history_values | default([]) | tojson | safe }}');
+            const statusDist = JSON.parse('{{ status_dist | default({}) | tojson | safe }}');
+            const sourceDist = JSON.parse('{{ source_dist | default({}) | tojson | safe }}');
+            const reportDist = JSON.parse('{{ report_dist | default({}) | tojson | safe }}');
 
             // 1. Gráfico de Tendencia de Reportes (Línea)
             const ctxTrend = document.getElementById('reportsTrendChart').getContext('2d');
@@ -897,6 +921,12 @@
             navMetrics.addEventListener('click', () => switchTab('metrics'));
             navBlock.addEventListener('click', () => switchTab('block'));
             navPayments.addEventListener('click', () => switchTab('payments'));
+
+            // Ajustar dinámicamente el ancho de la barra de progreso
+            document.querySelectorAll('.progress-fill').forEach(el => {
+                const width = el.getAttribute('data-width') || '0';
+                el.style.width = `${width}%`;
+            });
 
             // Initial view
             switchTab('metrics');

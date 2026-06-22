@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,11 +24,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.QuestionAnswer
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Speed
@@ -41,6 +47,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +67,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -172,42 +180,36 @@ fun PaywallScreen(
             HeroSection(
                 isPremium = uiState.isPremium,
                 subscriptionStatus = uiState.subscriptionStatus,
-                expiresAtFormatted = uiState.expiresAtFormatted
+                onBack = onBack
             )
 
-            if (uiState.isPremium) {
+            if (uiState.isPremium && uiState.subscriptionStatus != "TRIAL") {
                 ActiveSubscriptionCard(
                     status = uiState.subscriptionStatus ?: "ACTIVE",
                     expiresAt = uiState.expiresAtFormatted,
                     isOffline = uiState.premiumAvailableOffline
                 )
             } else {
+                if (uiState.subscriptionStatus == "TRIAL") {
+                    TrialActiveCard(
+                        daysRemaining = uiState.trialDaysRemaining,
+                        expiresAt = uiState.expiresAtFormatted
+                    )
+                }
+
                 FeatureComparisonSection()
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                EmailInputSection(
-                    email = emailInput,
-                    onEmailChange = { emailInput = it }
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 PlanCards(
                     onMonthly = {
-                        if (emailInput.isNotBlank()) {
-                            viewModel.setUserEmail(emailInput.trim())
-                        }
                         viewModel.activatePremium("premium_monthly")
                     },
                     onAnnual = {
-                        if (emailInput.isNotBlank()) {
-                            viewModel.setUserEmail(emailInput.trim())
-                        }
                         viewModel.activatePremium("premium_annual")
                     },
                     isLoading = uiState.isLoading,
-                    canSubscribe = emailInput.isNotBlank() && emailInput.contains("@")
+                    canSubscribe = true
                 )
             }
 
@@ -232,6 +234,12 @@ fun PaywallScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             TrustBadges()
+
+            FAQSection()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            FooterSection()
         }
 
         if (showSuccessDialog) {
@@ -324,14 +332,13 @@ fun PaywallScreen(
 private fun HeroSection(
     isPremium: Boolean,
     subscriptionStatus: String?,
-    expiresAtFormatted: String?
+    onBack: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(240.dp)
+            .height(260.dp)
             .background(if (isPremium) GoldVioletGradient else SpaceDeepGradient),
-        contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
@@ -339,74 +346,104 @@ private fun HeroSection(
                 .background(
                     if (isPremium) Navy950.copy(alpha = 0.55f)
                     else Color.Black.copy(alpha = 0.4f)
-                ),
-            contentAlignment = Alignment.Center
+                )
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(WindowInsets.statusBars.asPaddingValues()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Escudo o estrella dorada con borde fino y cristalino
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color.White.copy(alpha = 0.06f))
-                        .border(1.dp, Color(0xFFD4A843).copy(alpha = 0.3f), RoundedCornerShape(18.dp)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = if (isPremium) Icons.Outlined.Star else Icons.Outlined.Shield,
-                        contentDescription = null,
-                        tint = Color(0xFFF0D070),
-                        modifier = Modifier.size(36.dp)
-                    )
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Cerrar",
+                            tint = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                    
+                    if (isPremium) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(GoldMetallicGradient)
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "PREMIUM",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = Navy950
+                                )
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                ) {
+                    // Escudo o estrella dorada con borde fino y cristalino
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color.White.copy(alpha = 0.06f))
+                            .border(1.dp, Color(0xFFD4A843).copy(alpha = 0.3f), RoundedCornerShape(18.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isPremium) Icons.Outlined.Star else Icons.Outlined.Shield,
+                            contentDescription = null,
+                            tint = Color(0xFFF0D070),
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
 
-                Text(
-                    text = if (isPremium) "Patova Premium" else "Recuperá la paz en tu teléfono",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.3.sp,
-                        fontSize = if (isPremium) 22.sp else 20.sp
-                    ),
-                    color = TextPrimary,
-                    textAlign = TextAlign.Center
-                )
+                    Spacer(modifier = Modifier.height(14.dp))
 
-                if (isPremium && subscriptionStatus != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = if (subscriptionStatus == "ACTIVE") "Tu protección activa está al 100%"
-                        else "Estado de la suscripción: $subscriptionStatus",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFFF0D070)
+                        text = if (isPremium) "Patova Premium" else "Tu teléfono, bajo tu control",
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.3.sp,
+                            color = TextPrimary
                         ),
                         textAlign = TextAlign.Center
                     )
-                    if (expiresAtFormatted != null) {
+
+                    if (isPremium && subscriptionStatus != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Validez hasta el: $expiresAtFormatted",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextMuted,
+                            text = if (subscriptionStatus == "ACTIVE") "Protección 100% activa"
+                            else "Estado: $subscriptionStatus",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFF0D070)
+                            ),
                             textAlign = TextAlign.Center
                         )
+                    } else {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Olvidate de las llamadas spam y estafas. Patova las ataja en silencio por vos para que recuperes tu paz mental.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp
+                            ),
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
                     }
-                } else {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Olvidate de las llamadas spam a la hora de la siesta, de laburar o de cenar. Patova las ataja en silencio por vos.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        ),
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
                 }
             }
         }
@@ -462,6 +499,68 @@ private fun ActiveSubscriptionCard(
                     text = "Modo offline activo · Sincroniza en menos de 7 dias",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                     color = WarningAmber
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrialActiveCard(
+    daysRemaining: Int,
+    expiresAt: String?
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .border(1.dp, Color(0xFFD4A843).copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(containerColor = Navy800.copy(alpha = 0.8f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFF0D070),
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Prueba Premium Activa",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF0D070)
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "Tenés $daysRemaining días de prueba gratuita. Durante este tiempo el spam de llamadas se bloquea de forma 100% silenciosa.",
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp, lineHeight = 18.sp),
+                color = TextPrimary,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Al finalizar, las llamadas de spam sonarán y te alertaremos con una notificación. Pasate a Premium por solo $1.000/mes (¡menos de lo que sale un café al paso!) para mantener la paz mental y la protección silenciosa para siempre.",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, lineHeight = 16.sp),
+                color = TextMuted,
+                textAlign = TextAlign.Center
+            )
+
+            if (expiresAt != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Prueba válida hasta: $expiresAt",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                    color = Color(0xFFF0D070).copy(alpha = 0.8f)
                 )
             }
         }
@@ -898,19 +997,141 @@ private fun PlanCards(
 }
 
 @Composable
+private fun FooterLink(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall.copy(
+            textDecoration = TextDecoration.Underline,
+            color = TextMuted
+        ),
+        modifier = Modifier.clickable { /* Handle link */ }
+    )
+}
+
+@Composable
+private fun FAQSection() {
+    val faqs = listOf(
+        "¿Cómo cancelo mi suscripción?" to "Podés cancelar en cualquier momento desde Mercado Pago o contactándonos por soporte.",
+        "¿Hay que estar conectado a internet?" to "No, Patova Premium funciona offline hasta por 7 días gracias a su base de datos local sincronizada.",
+        "¿Es seguro mi pago?" to "Sí, procesamos todos los pagos a través de Mercado Pago, la plataforma más segura de la región.",
+        "¿Qué pasa si cambio de teléfono?" to "Tu suscripción está ligada a tu cuenta. Solo tenés que loguearte con tu email en el nuevo dispositivo."
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 24.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.QuestionAnswer,
+                contentDescription = null,
+                tint = Color(0xFFF0D070),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Preguntas Frecuentes",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = TextPrimary
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        faqs.forEach { (question, answer) ->
+            FAQItem(question = question, answer = answer)
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun FAQItem(question: String, answer: String) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Navy800.copy(alpha = 0.3f))
+            .border(0.5.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+            .clickable { expanded = !expanded }
+            .padding(14.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = question,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = TextPrimary,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = if (expanded) Icons.Rounded.Close else Icons.AutoMirrored.Outlined.HelpOutline,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        
+        AnimatedVisibility(visible = expanded) {
+            Column {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = answer,
+                    style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                    color = TextSecondary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FooterSection() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            FooterLink("Términos")
+            FooterLink("Privacidad")
+            FooterLink("Restaurar")
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Text(
+            text = "Patova Premium es una suscripción recurrente. El pago se debitará de tu cuenta de Mercado Pago al confirmar la compra.",
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
+            color = TextMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+    }
+}
+
+@Composable
 private fun TrustBadges() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TrustBadgeItem(icon = Icons.Outlined.Security, text = "Pago seguro vía MercadoPago")
-        Spacer(modifier = Modifier.width(6.dp))
-        TrustBadgeItem(icon = Icons.Outlined.Speed, text = "Activación inmediata")
-        Spacer(modifier = Modifier.width(6.dp))
-        TrustBadgeItem(icon = Icons.Outlined.Check, text = "Cancelación simple")
+        TrustBadgeItem(icon = Icons.Outlined.Security, text = "Pago Seguro")
+        TrustBadgeItem(icon = Icons.Outlined.Shield, text = "Privacidad")
+        TrustBadgeItem(icon = Icons.Outlined.Speed, text = "Eficiente")
     }
 }
 
