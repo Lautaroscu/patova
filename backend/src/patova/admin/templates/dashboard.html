@@ -109,6 +109,7 @@
 <nav class="admin-nav">
   <button id="navMetrics" class="nav-btn active">📊 Métricas</button>
   <button id="navBlock" class="nav-btn">🚫 Bloquear Números</button>
+  <button id="navPayments" class="nav-btn">💳 Pagos (MP)</button>
 </nav>
 
     <main>
@@ -158,8 +159,181 @@
                     <div class="chart-wrapper">
                         <canvas id="numberSourceChart"></canvas>
                     </div>
+                        <!-- ── Payments View (Revenue Cards & Payments Table) ── -->
+        <div id="paymentsView" class="tab-content-hidden">
+            <section class="cards">
+                <div class="card">
+                    <h3>Usuarios Premium Activos</h3>
+                    <p class="value" style="color: #86efac;">{{ active_subs_count | default(0) }}</p>
+                </div>
+                <div class="card">
+                    <h3>Facturación Mensual (30 días)</h3>
+                    <p class="value" style="color: #58a6ff;">${{ monthly_revenue | default(0) | int }}</p>
+                </div>
+                <div class="card">
+                    <h3>Facturación Histórica (DB)</h3>
+                    <p class="value" style="color: #f0d070;">${{ total_revenue | default(0) | int }}</p>
                 </div>
             </section>
+
+            <!-- ── Monotributo Control (ARCA) ── -->
+            <section class="card" style="margin: 1.5rem 0; background: rgba(22, 27, 34, 0.95); border: 1px solid rgba(88, 166, 255, 0.25);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid #30363d; padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #f0f6fc; display: flex; align-items: center; gap: 0.5rem;">
+                            🏛️ Control de Categoría Monotributo (ARCA)
+                        </h2>
+                        <p class="help-text" style="margin-top: 0.25rem;">Control de límites de facturación de los últimos 12 meses móviles.</p>
+                    </div>
+                    {% if monotributo_categoria %}
+                    <span class="version" style="font-size: 0.85rem; padding: 0.4rem 1rem; border-color: rgba(240, 208, 112, 0.4); color: #f0d070; background: rgba(240, 208, 112, 0.1);">
+                        CUIT: {{ monotributo_cuit | default('No Configurado') }} · Categoría {{ monotributo_categoria }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if monotributo_categoria %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <span class="help-text">Facturado Últimos 12 Meses</span>
+                        <p style="font-size: 1.6rem; font-weight: 700; color: #e2e8f0; margin-top: 0.25rem;">
+                            ${{ monotributo_anual_facturado | default(0) | int }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="help-text">Límite Anual Categoría {{ monotributo_categoria }}</span>
+                        <p style="font-size: 1.6rem; font-weight: 700; color: #8b949e; margin-top: 0.25rem;">
+                            ${{ monotributo_limite | default(0) | int }}
+                        </p>
+                    </div>
+                    <div>
+                        <span class="help-text">Cupo Restante</span>
+                        <p style="font-size: 1.6rem; font-weight: 700; color: {% if monotributo_porcentaje > 90 %}#ff7b72{% elif monotributo_porcentaje > 75 %}#d29922{% else %}#56d364{% endif %}; margin-top: 0.25rem;">
+                            ${{ monotributo_restante | default(0) | int }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span class="help-text" style="font-weight: 600;">Porcentaje Consumido del Límite</span>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: {% if monotributo_porcentaje > 90 %}#ff7b72{% elif monotributo_porcentaje > 75 %}#d29922{% else %}#56d364{% endif %};">
+                            {{ monotributo_porcentaje }}%
+                        </span>
+                    </div>
+                    <div style="width: 100%; height: 10px; background: #161b22; border-radius: 99px; overflow: hidden; border: 1px solid #30363d;">
+                        <div style="width: {{ monotributo_porcentaje }}%; height: 100%; border-radius: 99px; background: {% if monotributo_porcentaje > 90 %}linear-gradient(90deg, #ff7b72, #f85149){% elif monotributo_porcentaje > 75 %}linear-gradient(90deg, #d29922, #e3b341){% else %}linear-gradient(90deg, #56d364, #3ea751){% endif %}; transition: width 0.5s ease;"></div>
+                    </div>
+                </div>
+
+                <!-- Alert Message -->
+                {% if monotributo_porcentaje > 90 %}
+                <div class="alert alert-error" style="margin-top: 1rem; border-color: rgba(248, 81, 73, 0.4);">
+                    <strong>🚨 Alerta Crítica de Recategorización:</strong> Has consumido el <strong>{{ monotributo_porcentaje }}%</strong> de tu facturación anual permitida para la Categoría {{ monotributo_categoria }}. ¡Estás muy cerca de pasarte al siguiente escalón o régimen general!
+                </div>
+                {% elif monotributo_porcentaje > 75 %}
+                <div class="alert alert-warning" style="margin-top: 1rem; background: rgba(210, 153, 34, 0.15); border: 1px solid rgba(210, 153, 34, 0.4); color: #e3b341;">
+                    <strong>⚠️ Advertencia de Límite:</strong> Has alcanzado el <strong>{{ monotributo_porcentaje }}%</strong> de tu cupo anual. Te recomendamos monitorear de cerca las próximas facturas.
+                </div>
+                {% else %}
+                <div class="alert alert-success" style="margin-top: 1rem; border-color: rgba(46, 164, 79, 0.4);">
+                    <strong>✓ Estado Seguro:</strong> Tu facturación de los últimos 12 meses móviles está en un nivel controlado (<strong>{{ monotributo_porcentaje }}%</strong> consumido).
+                </div>
+                {% endif %}
+
+                {% else %}
+                <!-- Monotributo not configured -->
+                <div style="background: rgba(88, 166, 255, 0.05); border: 1px dashed rgba(88, 166, 255, 0.3); padding: 1rem; border-radius: 8px;">
+                    <p style="font-size: 0.85rem; color: #8b949e; line-height: 1.45;">
+                        💡 <strong>Control de Recategorización ARCA:</strong> Podés ver las alertas de facturación anual y porcentaje consumido directamente aquí si configurás tu CUIT y Categoría del Monotributo en tu archivo <code>.env</code> agregando las siguientes variables:
+                    </p>
+                    <pre style="background: #0d1117; color: #58a6ff; font-family: monospace; font-size: 0.8rem; padding: 0.75rem; border-radius: 6px; border: 1px solid #30363d; margin-top: 0.75rem; white-space: pre-wrap; word-break: break-all;">MONOTRIBUTO_CUIT=20123456789&#10;MONOTRIBUTO_CATEGORIA=B</pre>
+                </div>
+                {% endif %}
+            </section>
+
+            <div style="display: flex; flex-direction: column; gap: 2rem;">
+                <section class="table-section" style="width: 100%;">
+                    <h2>Suscripciones Activas/Expiradas (Base de Datos Local)</h2>
+                    <p class="help-text" style="margin-bottom: 1rem;">Muestra los usuarios que el sistema tiene registrados como activos tras procesar los webhooks.</p>
+                    <div class="table-container">
+                        <table id="localPaymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha de Inicio</th>
+                                    <th>ID Pago MP</th>
+                                    <th>ID Usuario</th>
+                                    <th>Plan</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if recent_payments %}
+                                {% for payment in recent_payments %}
+                                <tr>
+                                    <td><code>{{ payment.started_at }}</code></td>
+                                    <td><code>{{ payment.payment_id }}</code></td>
+                                    <td><code>{{ payment.user_id }}</code></td>
+                                    <td>{{ payment.plan_name }}</td>
+                                    <td><strong>${{ payment.amount | int }}</strong></td>
+                                    <td><span class="badge {% if payment.status == 'ACTIVE' %}badge-pred{% else %}badge-spam{% endif %}">{{ payment.status }}</span></td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="empty">No hay suscripciones registradas en la base de datos.</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="table-section" style="width: 100%;">
+                    <h2>Historial de Cobros Recientes (MercadoPago API en tiempo real)</h2>
+                    <p class="help-text" style="margin-bottom: 1rem;">Muestra la información de cobros consultada directamente a la cuenta de MercadoPago configurada.</p>
+                    <div class="table-container">
+                        <table id="mpRealPaymentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Fecha Cobro</th>
+                                    <th>ID Pago MP</th>
+                                    <th>Email Payer</th>
+                                    <th>Método Pago</th>
+                                    <th>Monto Bruto</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if mp_payments %}
+                                {% for p in mp_payments %}
+                                <tr>
+                                    <td><code>{{ p.date }}</code></td>
+                                    <td><code>{{ p.id }}</code></td>
+                                    <td><code>{{ p.email }}</code></td>
+                                    <td><code>{{ p.payment_method }}</code></td>
+                                    <td style="color: #86efac;"><strong>${{ p.amount | int }}</strong></td>
+                                    <td>
+                                        <span class="badge {% if p.status == 'APPROVED' %}badge-pred{% elif p.status == 'PENDING' %}badge-crowd{% else %}badge-spam{% endif %}">
+                                            {{ p.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="empty">
+                                        No se encontraron pagos en la cuenta de MercadoPago (o las credenciales no están configuradas en producción).
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </div>
 
         <div class="dashboard-grid">
@@ -682,38 +856,47 @@
             // ── Lógica de Navegación (Tabs) ──────────────────────────────────
             const navMetrics = document.getElementById('navMetrics');
             const navBlock = document.getElementById('navBlock');
+            const navPayments = document.getElementById('navPayments');
             
             const metricsView = document.getElementById('metricsView');
             const controlsView = document.getElementById('controlsView');
             const tablesView = document.getElementById('tablesView');
+            const paymentsView = document.getElementById('paymentsView');
             const dashboardGrid = document.querySelector('.dashboard-grid');
 
             function switchTab(activeTab) {
+                // Remove active classes
+                navMetrics.classList.remove('active');
+                navBlock.classList.remove('active');
+                navPayments.classList.remove('active');
+
+                // Hide all views
+                metricsView.classList.add('tab-content-hidden');
+                tablesView.classList.add('tab-content-hidden');
+                controlsView.classList.add('tab-content-hidden');
+                paymentsView.classList.add('tab-content-hidden');
+
+                // Reset centering
+                controlsView.classList.remove('controls-centered');
+                dashboardGrid.style.gridTemplateColumns = '1fr';
+
                 if (activeTab === 'metrics') {
                     navMetrics.classList.add('active');
-                    navBlock.classList.remove('active');
-                    
                     metricsView.classList.remove('tab-content-hidden');
                     tablesView.classList.remove('tab-content-hidden');
-                    controlsView.classList.add('tab-content-hidden');
-                    
-                    controlsView.classList.remove('controls-centered');
-                    dashboardGrid.style.gridTemplateColumns = '1fr';
-                } else {
-                    navMetrics.classList.remove('active');
+                } else if (activeTab === 'block') {
                     navBlock.classList.add('active');
-                    
-                    metricsView.classList.add('tab-content-hidden');
-                    tablesView.classList.add('tab-content-hidden');
                     controlsView.classList.remove('tab-content-hidden');
-                    
                     controlsView.classList.add('controls-centered');
-                    dashboardGrid.style.gridTemplateColumns = '1fr';
+                } else if (activeTab === 'payments') {
+                    navPayments.classList.add('active');
+                    paymentsView.classList.remove('tab-content-hidden');
                 }
             }
 
             navMetrics.addEventListener('click', () => switchTab('metrics'));
             navBlock.addEventListener('click', () => switchTab('block'));
+            navPayments.addEventListener('click', () => switchTab('payments'));
 
             // Initial view
             switchTab('metrics');

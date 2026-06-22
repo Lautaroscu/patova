@@ -92,9 +92,10 @@ class MercadoPagoClient:
             )
 
         data = response.json()
+        init_point = data.get("sandbox_init_point", data["init_point"]) if self.is_sandbox else data["init_point"]
         return {
             "preference_id": data["id"],
-            "init_point": data.get("sandbox_init_point", data["init_point"]),
+            "init_point": init_point,
             "external_reference": external_ref,
         }
 
@@ -107,6 +108,22 @@ class MercadoPagoClient:
                 f"MP get_payment failed: {response.status_code} {response.text}"
             )
 
+        return response.json()
+
+    async def search_payments(self, limit: int = 30) -> dict:
+        client = await self._get_client()
+        response = await client.get(
+            "/v1/payments/search",
+            params={
+                "sort": "date_created",
+                "criteria": "desc",
+                "limit": limit
+            }
+        )
+        if response.status_code != 200:
+            raise MercadoPagoError(
+                f"MP search_payments failed: {response.status_code} {response.text}"
+            )
         return response.json()
 
     def _build_webhook_url(self) -> str:

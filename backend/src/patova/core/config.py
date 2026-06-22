@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     mp_access_token: str = "TEST-0000000000000000-000000-00000000000000000000000000000000-000000000"
     mp_sandbox: bool = True
     mp_webhook_base_url: str = ""
+    monotributo_cuit: str = ""
+    monotributo_categoria: str = ""
 
 
 @lru_cache
