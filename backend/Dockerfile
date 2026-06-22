@@ -33,7 +33,9 @@ COPY alembic.ini .
 COPY alembic/ alembic/
 COPY src/ src/
 COPY .env.example .env.example
+COPY scripts/entrypoint.sh /app/entrypoint.sh
 
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 RUN chown -R patova:patova /app
 
 USER patova
