@@ -17,4 +17,5 @@ htmlcov/
 *.md
 !README.md
 tests/
-scripts/
+scripts/*
+!scripts/entrypoint.sh
