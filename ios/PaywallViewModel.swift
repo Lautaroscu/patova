@@ -43,6 +43,38 @@ public struct CreatePreferenceResponse: Codable {
     }
 }
 
+public struct SubscriptionPlan: Codable, Identifiable {
+    public let id: String
+    public let title: String
+    public let subtitle: String
+    public let description: String
+    public let price: Double
+    public let currency: String
+    public let formattedPrice: String
+    public let buttonText: String
+    public let interval: String
+    public let badge: String?
+    public let discount: String?
+    public let equivalentMonthlyPriceText: String?
+    public let isRecommended: Bool
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case subtitle
+        case description
+        case price
+        case currency
+        case formattedPrice = "formatted_price"
+        case buttonText = "button_text"
+        case interval
+        case badge
+        case discount
+        case equivalentMonthlyPriceText = "equivalent_monthly_price_text"
+        case isRecommended = "is_recommended"
+    }
+}
+
 @MainActor
 public final class PaywallViewModel: ObservableObject {
     @Published public var isLoading = false
@@ -51,18 +83,80 @@ public final class PaywallViewModel: ObservableObject {
     @Published public var errorMessage: String? = nil
     @Published public var subscriptionStatus: String? = nil
     @Published public var expiresAtFormatted: String? = nil
+    @Published public var plans: [SubscriptionPlan] = []
     
-    private let baseURL = URL(string: "https://patova-api.serra.agency/v1")!
-    private let apiKey = "dev-dummy-key"
-    private let userId = "usr_8341f3e48971"
+    private let baseURL = URL(string: AppConfig.apiBaseURL)!
+    private let apiKey = AppConfig.apiKey
+    private let userId = AppConfig.defaultUserId
     
     private let isPremiumKey = "patova_is_premium"
     private let expiresKey = "patova_premium_expires"
     private let statusKey = "patova_premium_status"
     
+    private let fallbackPlans = [
+        SubscriptionPlan(
+            id: "premium_monthly",
+            title: "Plan Mensual",
+            subtitle: "Sin compromiso · Cancelá cuando quieras",
+            description: "Menos de lo que sale un café al paso ($1.000/mes) para liberarte del spam.",
+            price: 1000.0,
+            currency: "ARS",
+            formattedPrice: "$1.000",
+            buttonText: "Suscribirme · $1.000/mes",
+            interval: "month",
+            badge: nil,
+            discount: nil,
+            equivalentMonthlyPriceText: nil,
+            isRecommended: false
+        ),
+        SubscriptionPlan(
+            id: "premium_annual",
+            title: "Plan Anual",
+            subtitle: "2 meses gratis · Mejor valor",
+            description: "Equivale a menos de lo que cuesta un alfajor por mes para tener paz mental todo el año.",
+            price: 9600.0,
+            currency: "ARS",
+            formattedPrice: "$9.600",
+            buttonText: "Suscribirme · $800/mes (anual)",
+            interval: "year",
+            badge: "RECOMENDADO · EL MÁS ELEGIDO",
+            discount: "AHORRÁ 34%",
+            equivalentMonthlyPriceText: "equivale a $800/mes",
+            isRecommended: true
+        )
+    ]
+    
     public init() {
+        self.plans = fallbackPlans
         loadCachedState()
         refreshSubscriptionStatus()
+        fetchPlans()
+    }
+    
+    public func fetchPlans() {
+        let url = baseURL.appendingPathComponent("/payments/plans")
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key")
+        
+        let requestToSend = request
+        Task {
+            do {
+                let (data, response) = try await URLSession.shared.data(for: requestToSend)
+                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                    throw NSError(domain: "PatovaPaywall", code: -1, userInfo: [NSLocalizedDescriptionKey: "Error cargando planes"])
+                }
+                
+                let result = try JSONDecoder().decode([SubscriptionPlan].self, from: data)
+                self.plans = result
+            } catch {
+                print("❌ Patova: Error al cargar planes del backend: \(error.localizedDescription)")
+                if self.plans.isEmpty {
+                    self.plans = fallbackPlans
+                }
+            }
+        }
     }
     
     private func loadCachedState() {

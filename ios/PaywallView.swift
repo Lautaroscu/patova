@@ -169,143 +169,115 @@ struct PaywallView: View {
                         
                         // MARK: - Planes de Venta Directa (Un Toque, Cero Fricción)
                         VStack(spacing: 16) {
-                            
-                            // Tarjeta Plan Mensual
-                            VStack(alignment: .leading, spacing: 14) {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Plan Mensual")
-                                            .font(.system(.headline, design: .rounded))
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.white)
-                                        Text("Sin compromiso · Cancelá cuando quieras")
-                                            .font(.caption)
-                                            .foregroundColor(.white.opacity(0.5))
+                            ForEach(viewModel.plans) { plan in
+                                VStack(alignment: .leading, spacing: 14) {
+                                    // Badges
+                                    if plan.badge != nil || plan.discount != nil {
+                                        HStack {
+                                            if let badge = plan.badge {
+                                                Text(badge)
+                                                    .font(.system(size: 9, weight: .black))
+                                                    .foregroundColor(navy950)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(goldMetallic)
+                                                    .cornerRadius(6)
+                                            }
+                                            
+                                            Spacer()
+                                            
+                                            if let discount = plan.discount {
+                                                Text(discount)
+                                                    .font(.system(size: 10, weight: .bold))
+                                                    .foregroundColor(goldYellow)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(goldYellow.opacity(0.15))
+                                                    .cornerRadius(6)
+                                            }
+                                        }
                                     }
-                                    Spacer()
-                                    Text("$1.000")
-                                        .font(.system(.title3, design: .rounded))
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                }
-                                
-                                Text("Menos de lo que sale un café al paso ($1.000/mes) para liberarte del spam.")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                                
-                                Button(action: {
-                                    viewModel.activatePremium(planId: "premium_monthly")
-                                }) {
+                                    
                                     HStack {
-                                        Spacer()
-                                        if viewModel.isLoading {
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle(tint: goldYellow))
-                                        } else {
-                                            Text("Suscribirme · $1.000/mes")
-                                                .font(.system(.subheadline, design: .rounded))
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(plan.title)
+                                                .font(.system(.headline, design: .rounded))
                                                 .fontWeight(.bold)
-                                                .foregroundColor(goldYellow)
+                                                .foregroundColor(plan.isRecommended ? goldYellow : .white)
+                                            Text(plan.subtitle)
+                                                .font(.caption)
+                                                .foregroundColor(.white.opacity(0.5))
                                         }
                                         Spacer()
+                                        VStack(alignment: .trailing, spacing: 2) {
+                                            Text(plan.formattedPrice)
+                                                .font(.system(plan.isRecommended ? .title2 : .title3, design: .rounded))
+                                                .fontWeight(plan.isRecommended ? .black : .bold)
+                                                .foregroundColor(plan.isRecommended ? goldYellow : .white)
+                                            
+                                            if let eqText = plan.equivalentMonthlyPriceText {
+                                                Text(eqText)
+                                                    .font(.system(size: 10))
+                                                    .foregroundColor(.white.opacity(0.5))
+                                            }
+                                        }
                                     }
-                                    .padding()
-                                    .background(navy900)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(goldYellow.opacity(0.4), lineWidth: 1)
-                                    )
-                                }
-                                .disabled(viewModel.isLoading)
-                            }
-                            .padding()
-                            .background(navy800.opacity(0.5))
-                            .cornerRadius(18)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
-                            )
-                            
-                            // Tarjeta Plan Anual (El más destacado)
-                            VStack(alignment: .leading, spacing: 14) {
-                                // Badges
-                                HStack {
-                                    Text("RECOMENDADO · EL MÁS ELEGIDO")
-                                        .font(.system(size: 9, weight: .black))
-                                        .foregroundColor(navy950)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(goldMetallic)
-                                        .cornerRadius(6)
                                     
-                                    Spacer()
+                                    Text(plan.description)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.7))
                                     
-                                    Text("AHORRÁ 34%")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundColor(goldYellow)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(goldYellow.opacity(0.15))
-                                        .cornerRadius(6)
-                                }
-                                
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Plan Anual")
-                                            .font(.system(.headline, design: .rounded))
-                                            .fontWeight(.bold)
-                                            .foregroundColor(goldYellow)
-                                        Text("2 meses gratis · Mejor valor")
-                                            .font(.caption)
-                                            .foregroundColor(.white.opacity(0.5))
+                                    Button(action: {
+                                        viewModel.activatePremium(planId: plan.id)
+                                    }) {
+                                        HStack {
+                                            Spacer()
+                                            if viewModel.isLoading {
+                                                ProgressView()
+                                                    .progressViewStyle(CircularProgressViewStyle(tint: plan.isRecommended ? navy950 : goldYellow))
+                                            } else {
+                                                Text(plan.buttonText)
+                                                    .font(.system(.subheadline, design: .rounded))
+                                                    .fontWeight(plan.isRecommended ? .black : .bold)
+                                                    .foregroundColor(plan.isRecommended ? navy950 : goldYellow)
+                                            }
+                                            Spacer()
+                                        }
+                                        .padding()
+                                        .background(
+                                            Group {
+                                                if plan.isRecommended {
+                                                    goldMetallic
+                                                } else {
+                                                    goldMetallic.opacity(0.0) // fallback if transparent, or color
+                                                }
+                                            }
+                                        )
+                                        .background(plan.isRecommended ? Color.clear : navy900)
+                                        .cornerRadius(12)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .stroke(goldYellow.opacity(plan.isRecommended ? 0.0 : 0.4), lineWidth: 1)
+                                        )
+                                        .shadow(color: plan.isRecommended ? goldYellow.opacity(0.3) : .clear, radius: 8, x: 0, y: 4)
                                     }
-                                    Spacer()
-                                    VStack(alignment: .trailing, spacing: 2) {
-                                        Text("$9.600")
-                                            .font(.system(.title2, design: .rounded))
-                                            .fontWeight(.black)
-                                            .foregroundColor(goldYellow)
-                                        Text("equivale a $800/mes")
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.white.opacity(0.5))
-                                    }
+                                    .disabled(viewModel.isLoading)
                                 }
-                                
-                                Text("Equivale a menos de lo que cuesta un alfajor por mes para tener paz mental todo el año.")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.7))
-                                
-                                Button(action: {
-                                    viewModel.activatePremium(planId: "premium_annual")
-                                }) {
-                                    HStack {
-                                        Spacer()
-                                        if viewModel.isLoading {
-                                            ProgressView()
-                                                .progressViewStyle(CircularProgressViewStyle(tint: navy950))
+                                .padding()
+                                .background(navy800.opacity(plan.isRecommended ? 1.0 : 0.5))
+                                .cornerRadius(18)
+                                .overlay(
+                                    Group {
+                                        if plan.isRecommended {
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(goldMetallic, lineWidth: 2)
                                         } else {
-                                            Text("Suscribirme · $800/mes (anual)")
-                                                .font(.system(.subheadline, design: .rounded))
-                                                .fontWeight(.black)
-                                                .foregroundColor(navy950)
+                                            RoundedRectangle(cornerRadius: 18)
+                                                .stroke(Color.white.opacity(0.06), lineWidth: 1)
                                         }
-                                        Spacer()
                                     }
-                                    .padding()
-                                    .background(goldMetallic)
-                                    .cornerRadius(12)
-                                    .shadow(color: goldYellow.opacity(0.3), radius: 8, x: 0, y: 4)
-                                }
-                                .disabled(viewModel.isLoading)
+                                )
                             }
-                            .padding()
-                            .background(navy800)
-                            .cornerRadius(18)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18)
-                                    .stroke(goldMetallic, lineWidth: 2)
-                            )
                         }
                         .padding(.horizontal)
                         

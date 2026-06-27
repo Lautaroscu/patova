@@ -10,6 +10,41 @@ class MercadoPagoError(Exception):
 
 
 class MercadoPagoClient:
+    PLANS = [
+        {
+            "id": "premium_monthly",
+            "title": "Plan Mensual",
+            "subtitle": "Sin compromiso · Cancelá cuando quieras",
+            "description": "Menos de lo que sale un café al paso ($1.000/mes) para liberarte del spam.",
+            "price": 1000.0,
+            "currency": "ARS",
+            "formatted_price": "$1.000",
+            "button_text": "Suscribirme · $1.000/mes",
+            "interval": "month",
+            "badge": None,
+            "discount": None,
+            "equivalent_monthly_price_text": None,
+            "is_recommended": False,
+            "mp_title": "Patova Premium Mensual",
+        },
+        {
+            "id": "premium_annual",
+            "title": "Plan Anual",
+            "subtitle": "2 meses gratis · Mejor valor",
+            "description": "Equivale a menos de lo que cuesta un alfajor por mes para tener paz mental todo el año.",
+            "price": 9600.0,
+            "currency": "ARS",
+            "formatted_price": "$9.600",
+            "button_text": "Suscribirme · $800/mes (anual)",
+            "interval": "year",
+            "badge": "RECOMENDADO · EL MÁS ELEGIDO",
+            "discount": "AHORRÁ 34%",
+            "equivalent_monthly_price_text": "equivale a $800/mes",
+            "is_recommended": True,
+            "mp_title": "Patova Premium Anual",
+        }
+    ]
+
     def __init__(self) -> None:
         settings = get_settings()
         self.access_token = settings.mp_access_token
@@ -40,11 +75,7 @@ class MercadoPagoClient:
         email: str,
         user_id: str,
     ) -> dict:
-        plan_prices = {
-            "premium_monthly": {"title": "Patova Premium Mensual", "price": 1000.0},
-            "premium_annual": {"title": "Patova Premium Anual", "price": 9600.0},
-        }
-        plan = plan_prices.get(plan_id, plan_prices["premium_monthly"])
+        plan = next((p for p in self.PLANS if p["id"] == plan_id), self.PLANS[0])
 
         external_ref = f"{user_id}_{int(time.time())}"
         notification_url = self._build_webhook_url()
@@ -68,7 +99,7 @@ class MercadoPagoClient:
             "items": [
                 {
                     "id": plan_id,
-                    "title": plan["title"],
+                    "title": plan["mp_title"],
                     "description": f"Suscripcion Patova Premium - {plan_id}",
                     "quantity": 1,
                     "currency_id": "ARS",

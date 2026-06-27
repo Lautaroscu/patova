@@ -16,12 +16,21 @@ from patova.schemas.payments import (
     CreatePreferenceResponse,
     SubscriptionDetail,
     SubscriptionMeResponse,
+    SubscriptionPlanResponse,
 )
 from patova.services.mp.client import MercadoPagoError, get_mp_client
 
 router = APIRouter(tags=["payments"])
 
 _WEBHOOK_IDEMPOTENCY_TTL = 60 * 60 * 24 * 30  # 30 days
+
+
+@router.get("/payments/plans", response_model=list[SubscriptionPlanResponse])
+async def get_plans(
+    _api_key: str = Depends(verify_api_key),
+):
+    mp = get_mp_client()
+    return mp.PLANS
 
 
 @router.post("/payments/create-preference", response_model=CreatePreferenceResponse)

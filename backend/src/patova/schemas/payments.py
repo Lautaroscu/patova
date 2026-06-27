@@ -29,3 +29,20 @@ class SubscriptionMeResponse(BaseModel):
     user_id: str
     is_premium: bool
     subscription: Optional[SubscriptionDetail] = None
+
+
+class SubscriptionPlanResponse(BaseModel):
+    id: str
+    title: str
+    subtitle: str
+    description: str
+    price: float
+    currency: str = "ARS"
+    formatted_price: str
+    button_text: str
+    interval: str  # "month" | "year"
+    badge: Optional[str] = None
+    discount: Optional[str] = None
+    equivalent_monthly_price_text: Optional[str] = None
+    is_recommended: bool = False
+
