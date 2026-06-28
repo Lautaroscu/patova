@@ -49,6 +49,22 @@ android {
     namespace = "ar.com.patova"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            val storeFileProp = localProperties.getProperty("RELEASE_KEY_STORE")
+            val storePasswordProp = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+            val keyAliasProp = localProperties.getProperty("RELEASE_KEY_ALIAS")
+            val keyPasswordProp = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+
+            if (storeFileProp != null && storePasswordProp != null && keyAliasProp != null && keyPasswordProp != null) {
+                storeFile = file(storeFileProp)
+                storePassword = storePasswordProp
+                keyAlias = keyAliasProp
+                keyPassword = keyPasswordProp
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "ar.com.patova"
         minSdk = 29
@@ -71,6 +87,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "API_BASE_URL", patovaReleaseBaseUrl)
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

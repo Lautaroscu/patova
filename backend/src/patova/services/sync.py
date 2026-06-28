@@ -36,9 +36,10 @@ async def sync_behavior(
             entry.added_at = entry.added_at.replace(tzinfo=UTC)
 
     # Convert blacklist_entries added_at to timezone-aware UTC if they are naive
-    for entry in local_changes.new_blacklist_entries:
-        if entry.added_at.tzinfo is None:
-            entry.added_at = entry.added_at.replace(tzinfo=UTC)
+    for bl_entry in local_changes.new_blacklist_entries:
+        if bl_entry.added_at.tzinfo is None:
+            bl_entry.added_at = bl_entry.added_at.replace(tzinfo=UTC)
+
 
     # If preferences is not None, ensure updated_at is timezone-aware
     if local_changes.preferences is not None and local_changes.preferences.updated_at.tzinfo is None:

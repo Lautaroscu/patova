@@ -134,7 +134,7 @@ public final class PaywallViewModel: ObservableObject {
     }
     
     public func fetchPlans() {
-        let url = baseURL.appendingPathComponent("/payments/plans")
+        let url = baseURL.appendingPathComponent("payments").appendingPathComponent("plans")
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -169,7 +169,7 @@ public final class PaywallViewModel: ObservableObject {
         self.isLoading = true
         self.errorMessage = nil
         
-        var components = URLComponents(url: baseURL.appendingPathComponent("/subscriptions/me"), resolvingAgainstBaseURL: true)!
+        var components = URLComponents(url: baseURL.appendingPathComponent("subscriptions").appendingPathComponent("me"), resolvingAgainstBaseURL: true)!
         components.queryItems = [URLQueryItem(name: "user_id", value: userId)]
         
         guard let url = components.url else { return }
@@ -227,7 +227,7 @@ public final class PaywallViewModel: ObservableObject {
         self.errorMessage = nil
         self.initPointUrl = nil
         
-        let url = baseURL.appendingPathComponent("/payments/create-preference")
+        let url = baseURL.appendingPathComponent("payments").appendingPathComponent("create-preference")
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

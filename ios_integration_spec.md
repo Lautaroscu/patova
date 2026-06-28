@@ -160,7 +160,7 @@ La app de iOS debe guiar visualmente al usuario para realizar esta acción:
 Podemos verificar si el usuario tiene el permiso activado y mostrar un cartel de advertencia si no lo hizo:
 
 ```swift
-CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: "agency.serra.patova.CallDirectory") { status, error in
+CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: "com.patova.app.patova.CallDirectory") { status, error in
     if let error = error {
         print("Error verificando estado: \(error)")
         return

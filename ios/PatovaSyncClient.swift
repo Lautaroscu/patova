@@ -8,9 +8,9 @@ public final class PatovaSyncClient {
     
     public static let shared = PatovaSyncClient()
     
-    private let baseURL = URL(string: "https://patova-api.serra.agency/v1")!
-    private let apiKey = "dev-dummy-key" // Reemplazar por tu PATOVA_API_KEY en producción
-    private let callKitExtensionIdentifier = "agency.serra.patova.CallDirectory"
+    private let baseURL = URL(string: AppConfig.apiBaseURL)!
+    private let apiKey = AppConfig.apiKey
+    private let callKitExtensionIdentifier = AppConfig.callKitExtensionIdentifier
     
     private init() {}
     
@@ -111,7 +111,7 @@ public final class PatovaSyncClient {
             localChanges: localChanges
         )
         
-        var request = URLRequest(url: baseURL.appendingPathComponent("/behavior/sync"))
+        var request = URLRequest(url: baseURL.appendingPathComponent("behavior").appendingPathComponent("sync"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: "X-Patova-Key") // Cabecera de Seguridad obligatoria

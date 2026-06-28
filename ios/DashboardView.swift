@@ -12,12 +12,17 @@ struct DashboardView: View {
     @State private var totalBlocked = 0
     @State private var identifiedNumbers = 0
     @State private var showSubscriptionSheet = false
+
+    private let patovaGreen = Color(red: 0.00, green: 0.78, blue: 0.33)
+    private let patovaGreenLight = Color(red: 0.27, green: 0.90, blue: 0.49)
+    private let patovaDark = Color(red: 0.04, green: 0.04, blue: 0.06)
+    private let patovaCard = Color(red: 0.06, green: 0.10, blue: 0.06)
+    private let patovaSurface = Color(red: 0.08, green: 0.12, blue: 0.08)
     
     var body: some View {
         ZStack {
-            // Fondo Oscuro Gradiente Premium
             LinearGradient(
-                gradient: Gradient(colors: [Color(red: 0.05, green: 0.05, blue: 0.08), Color(red: 0.08, green: 0.08, blue: 0.12)]),
+                gradient: Gradient(colors: [patovaDark, Color(red: 0.06, green: 0.09, blue: 0.06)]),
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -37,12 +42,12 @@ struct DashboardView: View {
                             
                             HStack(spacing: 6) {
                                 Circle()
-                                    .fill(isPremium ? Color.amber : Color.gray)
+                                    .fill(isPremium ? patovaGreenLight : Color.gray)
                                     .frame(width: 8, height: 8)
                                 Text(isPremium ? "PREMIUM ✨" : "PLAN GRATUITO")
                                     .font(.caption)
                                     .fontWeight(.bold)
-                                    .foregroundColor(isPremium ? .amber : .gray)
+                                    .foregroundColor(isPremium ? patovaGreenLight : .gray)
                             }
                         }
                         
@@ -72,16 +77,14 @@ struct DashboardView: View {
                     // MARK: - Escudo Central Interactivo
                     VStack(spacing: 16) {
                         ZStack {
-                            // Círculo de Brillo Trasero (Neon Glow)
                             Circle()
-                                .fill(isShieldActive ? (isPremium ? Color.amber : Color.teal) : Color.red)
+                                .fill(isShieldActive ? patovaGreen : Color.red)
                                 .opacity(isShieldActive ? 0.15 : 0.08)
                                 .frame(width: 220, height: 220)
                                 .blur(radius: isShieldActive ? 40 : 25)
                                 .scaleEffect(isShieldActive ? 1.1 : 0.95)
                                 .animation(.easeInOut(duration: 2).repeatForever(autoreverses: true), value: isShieldActive)
                             
-                            // Círculo de Vidrio Esmerilado (Glassmorphism Ring)
                             Circle()
                                 .fill(Color.white.opacity(0.04))
                                 .frame(width: 200, height: 200)
@@ -90,7 +93,7 @@ struct DashboardView: View {
                                         .stroke(
                                             LinearGradient(
                                                 gradient: Gradient(colors: [
-                                                    isShieldActive ? (isPremium ? Color.amber : Color.teal) : Color.red.opacity(0.6),
+                                                    isShieldActive ? patovaGreen : Color.red.opacity(0.6),
                                                     Color.white.opacity(0.05)
                                                 ]),
                                                 startPoint: .topLeading,
@@ -99,18 +102,17 @@ struct DashboardView: View {
                                             lineWidth: 3
                                         )
                                 )
-                                .shadow(color: (isShieldActive ? (isPremium ? Color.amber : Color.teal) : Color.red).opacity(0.2), radius: 15, x: 0, y: 10)
+                                .shadow(color: (isShieldActive ? patovaGreen : Color.red).opacity(0.2), radius: 15, x: 0, y: 10)
                             
-                            // Ícono del Escudo
                             VStack(spacing: 8) {
                                 Image(systemName: isShieldActive ? "shield.checkerboard" : "shield.slash.fill")
                                     .font(.system(size: 64, weight: .semibold, design: .rounded))
-                                    .foregroundColor(isShieldActive ? (isPremium ? .amber : .teal) : .red)
+                                    .foregroundColor(isShieldActive ? patovaGreen : .red)
                                 
                                 Text(isShieldActive ? "ACTIVO" : "INACTIVO")
                                     .font(.system(.headline, design: .rounded))
                                     .fontWeight(.black)
-                                    .foregroundColor(isShieldActive ? (isPremium ? .amber : .teal) : .red)
+                                    .foregroundColor(isShieldActive ? patovaGreen : .red)
                                     .tracking(1)
                             }
                         }
@@ -132,7 +134,7 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.amber)
+                                    .foregroundColor(patovaGreenLight)
                                     .font(.title2)
                                 Text("Activación Requerida")
                                     .font(.headline)
@@ -144,15 +146,13 @@ struct DashboardView: View {
                                 .foregroundColor(.white.opacity(0.7))
                             
                             VStack(alignment: .leading, spacing: 8) {
-                                TutorialStepRow(number: "1", text: "Abre la app de Ajustes de tu iPhone.")
-                                TutorialStepRow(number: "2", text: "Ve al menú de Teléfono.")
-                                TutorialStepRow(number: "3", text: "Toca Bloqueo e ident. de llamadas.")
-                                TutorialStepRow(number: "4", text: "Activa el interruptor de Patova.")
+                                TutorialStepRow(number: "1", text: "Tocá el botón de abajo para ir directo a los permisos.")
+                                TutorialStepRow(number: "2", text: "Activá el interruptor de Patova.")
                             }
                             .padding(.vertical, 4)
                             
                             Button(action: {
-                                if let url = URL(string: "App-Prefs:root=Phone") { // Abre ajustes de teléfono directamente si es posible
+                                if let url = URL(string: "App-prefs:root=Phone&path=CallBlockingAndIdentification") {
                                     UIApplication.shared.open(url)
                                 } else if let url = URL(string: UIApplication.openSettingsURLString) {
                                     UIApplication.shared.open(url)
@@ -160,7 +160,7 @@ struct DashboardView: View {
                             }) {
                                 HStack {
                                     Spacer()
-                                    Text("Ir a Ajustes del Teléfono")
+                                    Text("Activar Bloqueo de Llamadas")
                                         .font(.system(.subheadline, design: .rounded))
                                         .fontWeight(.bold)
                                         .foregroundColor(.black)
@@ -169,9 +169,9 @@ struct DashboardView: View {
                                     Spacer()
                                 }
                                 .padding()
-                                .background(Color.teal)
+                                .background(patovaGreen)
                                 .cornerRadius(12)
-                                .shadow(color: Color.teal.opacity(0.3), radius: 8, x: 0, y: 4)
+                                .shadow(color: patovaGreen.opacity(0.3), radius: 8, x: 0, y: 4)
                             }
                         }
                         .padding()
@@ -203,12 +203,12 @@ struct DashboardView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right.circle.fill")
                                     .font(.title2)
-                                    .foregroundColor(.teal)
+                                    .foregroundColor(patovaGreen)
                             }
                             .padding()
                             .background(
                                 LinearGradient(
-                                    gradient: Gradient(colors: [Color.teal.opacity(0.15), Color.purple.opacity(0.1)]),
+                                    gradient: Gradient(colors: [patovaGreen.opacity(0.15), patovaGreenLight.opacity(0.08)]),
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -216,7 +216,7 @@ struct DashboardView: View {
                             .cornerRadius(18)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 18)
-                                    .stroke(LinearGradient(colors: [.teal.opacity(0.4), .purple.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                                    .stroke(LinearGradient(colors: [patovaGreen.opacity(0.4), patovaGreenLight.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
                             )
                             .onTapGesture {
                                 showSubscriptionSheet = true
@@ -228,7 +228,7 @@ struct DashboardView: View {
                     // MARK: - Grilla de Estadísticas
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         StatCardView(title: "Spams Bloqueados", value: "\(totalBlocked)", icon: "hand.raised.fill", color: .red)
-                        StatCardView(title: "Números Sospechosos", value: "\(identifiedNumbers)", icon: "eye.fill", color: .teal)
+                        StatCardView(title: "Números Sospechosos", value: "\(identifiedNumbers)", icon: "eye.fill", color: patovaGreen)
                     }
                     .padding(.horizontal)
                     
@@ -275,7 +275,7 @@ struct DashboardView: View {
     }
     
     private func checkCallKitPermission() {
-        CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: "agency.serra.patova.CallDirectory") { status, error in
+        CXCallDirectoryManager.sharedInstance.getEnabledStatusForExtension(withIdentifier: AppConfig.callKitExtensionIdentifier) { status, error in
             DispatchQueue.main.async {
                 if status == .enabled {
                     self.isShieldActive = true
@@ -290,7 +290,7 @@ struct DashboardView: View {
         Task {
             do {
                 // Sincroniza contra FastAPI en segundo plano y recarga CallKit
-                try await PatovaSyncClient.shared.performSync(userId: "usr_8341f3e48971")
+                try await PatovaSyncClient.shared.performSync(userId: AppConfig.defaultUserId)
                 checkCallKitPermission()
                 updateCounts()
             } catch {
@@ -299,6 +299,8 @@ struct DashboardView: View {
         }
     }
 }
+
+private let dashboardGreen = Color(red: 0.00, green: 0.78, blue: 0.33)
 
 // MARK: - Vistas de Soporte Auxiliares
 
@@ -313,7 +315,7 @@ struct TutorialStepRow: View {
                 .fontWeight(.bold)
                 .foregroundColor(.black)
                 .frame(width: 18, height: 18)
-                .background(Color.teal)
+                .background(dashboardGreen)
                 .clipShape(Circle())
                 .padding(.top, 2)
             
@@ -358,9 +360,4 @@ struct StatCardView: View {
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
     }
-}
-
-// Custom colors definitions
-extension Color {
-    static let amber = Color(red: 1.0, green: 0.75, blue: 0.0)
 }

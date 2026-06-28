@@ -118,6 +118,19 @@
         .progress-success {
             background: linear-gradient(90deg, #56d364, #3ea751);
         }
+        .btn-danger {
+            background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+            color: #ffffff;
+        }
+        .btn-danger:not(:disabled):hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 12px rgba(220, 38, 38, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-danger:not(:disabled):active {
+            transform: translateY(1px);
+        }
     </style>
 </head>
 
@@ -395,6 +408,19 @@
 
                     <hr class="divider">
 
+                    <!-- Eliminar número y su bloque -->
+                    <form id="deleteBlockForm">
+                        <div class="input-group">
+                            <label for="deleteNumber">Desbloquear Rango (Revertir Semilla)</label>
+                            <input type="text" id="deleteNumber" placeholder="Ej: +5491112345678" required>
+                            <span class="help-text">Elimina el número semilla y todos los números predictivos de su bloque de 1.000.</span>
+                        </div>
+                        <button type="submit" id="deleteBlockSubmitBtn" class="btn btn-danger">Desbloquear Rango</button>
+                    </form>
+
+
+                    <hr class="divider">
+
                     <!-- Importar CSV -->
                     <div>
                         <label>Importación Masiva desde CSV</label>
@@ -525,6 +551,9 @@
             const seedForm = document.getElementById('seedForm');
             const seedNumberInput = document.getElementById('seedNumber');
             const seedSubmitBtn = document.getElementById('seedSubmitBtn');
+            const deleteBlockForm = document.getElementById('deleteBlockForm');
+            const deleteNumberInput = document.getElementById('deleteNumber');
+            const deleteBlockSubmitBtn = document.getElementById('deleteBlockSubmitBtn');
             const pruneBtn = document.getElementById('pruneBtn');
             const exportBtn = document.getElementById('exportBtn');
             const importZone = document.getElementById('importZone');
@@ -591,6 +620,45 @@
                 } finally {
                     seedSubmitBtn.disabled = false;
                     seedSubmitBtn.textContent = orig;
+                }
+            });
+
+            // ── Eliminar rango / Revertir semilla ─────────────────────────────
+            deleteBlockForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                clearAlert();
+                const apiKey = getApiKey();
+                if (!apiKey) return;
+
+                if (!confirm(`¿Confirmar desbloqueo del rango de 1000 números para la semilla ${deleteNumberInput.value.trim()}?`)) return;
+
+                deleteBlockSubmitBtn.disabled = true;
+                const orig = deleteBlockSubmitBtn.textContent;
+                deleteBlockSubmitBtn.textContent = 'Eliminando...';
+
+                try {
+                    const res = await fetch('/v1/admin/delete-block', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Patova-Key': apiKey },
+                        body: JSON.stringify({ phone_number: deleteNumberInput.value.trim() })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        showAlert(`Error: ${data.detail || 'Error al eliminar el bloque.'}`, 'error');
+                    } else {
+                        showAlert(
+                            `✓ Rango desbloqueado. Rango: [${data.bloque_inicio} - ${data.bloque_fin}]. `
+                            + `Registros eliminados: ${data.registros_eliminados}.`,
+                            'success'
+                        );
+                        deleteNumberInput.value = '';
+                        setTimeout(() => location.reload(), 2500);
+                    }
+                } catch (err) {
+                    showAlert(`Error de conexión: ${err.message}`, 'error');
+                } finally {
+                    deleteBlockSubmitBtn.disabled = false;
+                    deleteBlockSubmitBtn.textContent = orig;
                 }
             });
 

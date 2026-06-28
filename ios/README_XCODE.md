@@ -33,7 +33,7 @@ Como la app principal y la extensión `CallDirectory` se comunican mediante una 
 1. En Xcode, ve al proyecto **Patova** (en el panel izquierdo).
 2. Selecciona el target **Patova** y ve a **Signing & Capabilities** (Firma y Capacidades).
 3. Asegúrate de tener seleccionado tu **Team** de Apple Developer.
-4. En la sección **App Groups**, haz clic en el botón `+` para añadir un nuevo identificador de grupo. Como `group.agency.serra.patova` ya está preconfigurado por defecto, debería aparecer en tu lista. Si usas otra cuenta, crea uno propio con el formato: `group.tu-identificador.patova`.
+4. En la sección **App Groups**, haz clic en el botón `+` para añadir un nuevo identificador de grupo. Como `group.com.patova.app.patova` ya está preconfigurado por defecto, debería aparecer en tu lista. Si usas otra cuenta, crea uno propio con el formato: `group.tu-identificador.patova`.
 5. Repite el mismo paso para el target **CallDirectory** (la extensión de bloqueo). **Ambos deben usar el mismo App Group**.
 6. Si cambiaste el nombre del App Group, recuerda actualizar la constante `appGroupIdentifier` en el archivo `DatabaseManager.swift`.
 

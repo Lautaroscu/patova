@@ -47,6 +47,11 @@ class ManualSeedRequest(BaseModel):
     seed_number: str = Field(..., description="Número telefónico semilla para expandir el rango de 1000")
 
 
+class DeleteBlockRequest(BaseModel):
+    phone_number: str = Field(..., description="Número telefónico semilla o de bloque para eliminar/revertir el rango")
+
+
 class CallKitDeltaResponse(BaseModel):
     added: list[int]
     removed: list[int]
+

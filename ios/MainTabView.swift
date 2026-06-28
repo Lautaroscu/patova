@@ -48,6 +48,12 @@ struct MainTabView: View {
                     Label("Premium", systemImage: "star.fill")
                 }
                 .tag(2)
+
+            MiPatovaView()
+                .tabItem {
+                    Label("Mi Patova", systemImage: "person.crop.circle.fill")
+                }
+                .tag(3)
         }
         .preferredColorScheme(.dark)
     }

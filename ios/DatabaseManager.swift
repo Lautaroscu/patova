@@ -10,7 +10,7 @@ public final class DatabaseManager {
     public static let shared = DatabaseManager()
     
     private var db: OpaquePointer?
-    private let appGroupIdentifier = "group.agency.serra.patova"
+    private let appGroupIdentifier = "group.com.serra.app.patova"
     private let dbName = "patova_spam_store.sqlite"
     
     private init() {

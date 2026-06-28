@@ -92,7 +92,9 @@ class SpamEngineService:
         que no tengan ningún log de intercepción en blocked_calls_log.
         """
         from datetime import datetime, timedelta, UTC
+        from typing import cast
         from sqlalchemy import delete
+        from sqlalchemy.engine import CursorResult
         from patova.models.blocked_call_log import BlockedCallLog
 
         limit_date = datetime.now(UTC) - timedelta(days=180)
@@ -105,7 +107,33 @@ class SpamEngineService:
             PhoneNumber.created_at < limit_date,
             ~PhoneNumber.phone_number.in_(subq)
         )
-        res = await db.execute(stmt)
+        res = cast(CursorResult, await db.execute(stmt))
         await db.commit()
         return res.rowcount
+
+    @classmethod
+    async def delete_block(cls, db: AsyncSession, phone_number: int) -> Tuple[int, int, int]:
+        """
+        Calcula el bloque VoIP para un número y elimina de la base de datos el número semilla
+        y todos los registros predictivos asociados (is_predicted=True) en ese bloque de 1000.
+        Retorna (filas_eliminadas, start_range, end_range).
+        """
+        from typing import cast
+        from sqlalchemy import delete
+        from sqlalchemy.engine import CursorResult
+
+        start_range, end_range = cls.get_block_bounds(phone_number)
+
+        stmt = delete(PhoneNumber).where(
+            (PhoneNumber.phone_number == phone_number) |
+            (
+                (PhoneNumber.phone_number >= start_range) &
+                (PhoneNumber.phone_number <= end_range) &
+                (PhoneNumber.is_predicted == True)
+            )
+        )
+        res = cast(CursorResult, await db.execute(stmt))
+        await db.commit()
+        return res.rowcount, start_range, end_range
+
 

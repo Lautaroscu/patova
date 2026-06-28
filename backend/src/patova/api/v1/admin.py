@@ -14,7 +14,7 @@ from patova.api.deps import verify_admin_key
 from patova.db.session import get_session
 from patova.models.enums import NumberSource, NumberStatus
 from patova.models.phone_number import PhoneNumber
-from patova.schemas.reports import ManualSeedRequest
+from patova.schemas.reports import DeleteBlockRequest, ManualSeedRequest
 from patova.services.phone_normalization import normalize_to_e164
 from patova.services.spam_engine import SpamEngineService
 
@@ -252,4 +252,46 @@ async def import_spam_csv(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno al importar semillas desde el CSV."
         )
+
+
+@router.post("/delete-block", status_code=status.HTTP_200_OK)
+async def delete_admin_block(
+    payload: DeleteBlockRequest,
+    db: AsyncSession = Depends(get_session),
+    _api_key: str = Depends(verify_admin_key),
+):
+    """
+    Endpoint administrativo que permite eliminar de la base de datos un número semilla
+    y todos los registros predictivos asociados a su bloque de 1.000.
+    """
+    normalized = normalize_to_e164(payload.phone_number)
+    if not normalized:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de número inválido."
+        )
+
+    phone_int = int(normalized.lstrip("+"))
+
+    try:
+        deleted_count, start_range, end_range = await SpamEngineService.delete_block(db, phone_int)
+
+        # Disparar la invalidación de caché en segundo plano
+        from patova.workers.tasks import invalidate_validate_cache_block_task
+        invalidate_validate_cache_block_task.delay(start_range, end_range)
+
+        return {
+            "status": "success",
+            "phone_procesado": phone_int,
+            "bloque_inicio": start_range,
+            "bloque_fin": end_range,
+            "registros_eliminados": deleted_count,
+        }
+    except Exception as e:
+        log.exception("Error en /admin/delete-block")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno al eliminar el bloque."
+        )
+
 

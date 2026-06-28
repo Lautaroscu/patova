@@ -76,3 +76,15 @@ def invalidate_validate_cache_task(number_e164: str):
         await redis_client.aclose()
 
     _run_async(_invalidate())
+
+
+@app.task(name="invalidate_validate_cache_block")
+def invalidate_validate_cache_block_task(start_number: int, end_number: int):
+    async def _invalidate():
+        from patova.services.cache_service import invalidate_validate_cache_range
+        redis_client = get_redis_client()
+        await invalidate_validate_cache_range(redis_client, start_number, end_number)
+        await redis_client.aclose()
+
+    _run_async(_invalidate())
+

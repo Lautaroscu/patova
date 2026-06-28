@@ -98,16 +98,16 @@ struct SubscriptionWebView: View {
         self.isLoading = true
         self.errorMessage = nil
         
-        let apiURL = URL(string: "https://patova-api.serra.agency/v1/payments/create-preference")!
+        let apiURL = URL(string: AppConfig.apiBaseURL + "/payments/create-preference")!
         var request = URLRequest(url: apiURL)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("dev-dummy-key", forHTTPHeaderField: "X-Patova-Key") // Cabecera de API Key
+        request.setValue(AppConfig.apiKey, forHTTPHeaderField: "X-Patova-Key")
         
         let payload: [String: Any] = [
             "plan_id": "premium_monthly",
             "email": "usuario@test.com", // En producción se toma del perfil del usuario
-            "user_id": "usr_8341f3e48971"
+            "user_id": AppConfig.defaultUserId
         ]
         
         do {
@@ -197,7 +197,7 @@ struct SafariWebViewRepresentable: UIViewRepresentable {
                             // Consultar /subscriptions/me para asegurar actualización en base local de SQLite
                             Task {
                                 do {
-                                    try await PatovaSyncClient.shared.performSync(userId: "usr_8341f3e48971")
+                                    try await PatovaSyncClient.shared.performSync(userId: AppConfig.defaultUserId)
                                 } catch {
                                     print("Error de sync post-pago: \(error)")
                                 }

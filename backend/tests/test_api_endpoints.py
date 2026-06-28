@@ -170,3 +170,51 @@ class TestApiEndpoints:
         assert response.status_code == 429
         assert "Reporte duplicado" in response.json()["detail"]
 
+    async def test_admin_delete_block_endpoint(self, client: AsyncClient, clean_db):
+        # 1. Sembrar el rango
+        payload_seed = {
+            "seed_number": "+5491112345000"
+        }
+        res_seed = await client.post("/v1/admin/seed-range", json=payload_seed, headers=_admin_headers())
+        assert res_seed.status_code == 200
+        data_seed = res_seed.json()
+        assert data_seed["status"] == "success"
+
+        # Verificar que existen en la BD
+        stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345000)
+        res = await clean_db.execute(stmt)
+        phone = res.scalar_one_or_none()
+        assert phone is not None
+
+        # Verificar predictivo
+        stmt_pred = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345100)
+        res_pred = await clean_db.execute(stmt_pred)
+        phone_pred = res_pred.scalar_one_or_none()
+        assert phone_pred is not None
+        assert phone_pred.is_predicted is True
+
+        # 2. Revertir/Eliminar el bloque
+        payload_delete = {
+            "phone_number": "+5491112345000"
+        }
+        # Sin header admin (debe dar 401)
+        res_del_unauth = await client.post("/v1/admin/delete-block", json=payload_delete)
+        assert res_del_unauth.status_code == 401
+
+        # Con header admin
+        res_del = await client.post("/v1/admin/delete-block", json=payload_delete, headers=_admin_headers())
+        assert res_del.status_code == 200
+        data_del = res_del.json()
+        assert data_del["status"] == "success"
+        assert data_del["registros_eliminados"] == 1000
+
+        # Verificar que se hayan borrado de la BD
+        stmt_after = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345000)
+        res_after = await clean_db.execute(stmt_after)
+        assert res_after.scalar_one_or_none() is None
+
+        stmt_pred_after = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345100)
+        res_pred_after = await clean_db.execute(stmt_pred_after)
+        assert res_pred_after.scalar_one_or_none() is None
+
+

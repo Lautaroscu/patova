@@ -1,7 +1,7 @@
 name: Patova
 options:
-  bundleIdPrefix: agency.serra
-  xcodeVersion: "13.0"
+  bundleIdPrefix: com.patova.app
+  xcodeVersion: "26.6"
 targets:
   Patova:
     type: application
@@ -18,11 +18,26 @@ targets:
           - ".xcodegen"
           - "xcodegen_tmp"
           - "*-Info.plist"
+          - ".git/"
+          - "build/"
+          - ".gitignore"
+          - "errores.txt"
+          - "Patova.xcodeproj"
+          - "ci_scripts"
+          - "*.xcodeproj"
     info:
       path: Patova-Info.plist
+      properties:
+        LSRequiresIPhoneOS: true
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     settings:
-      PRODUCT_BUNDLE_IDENTIFIER: agency.serra.patova
-      DEVELOPMENT_TEAM: "" # Dejar vacío para firma automática o configurar el Team ID del desarrollador
+      PRODUCT_BUNDLE_IDENTIFIER: com.serra.app.patova
+      DEVELOPMENT_TEAM: "2AHHY43UG2"
       CODE_SIGN_ENTITLEMENTS: Patova.entitlements
     dependencies:
       - target: CallDirectory
@@ -36,7 +51,26 @@ targets:
       - DatabaseManager.swift
     info:
       path: CallDirectory-Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.callkit.call-directory
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).CallDirectoryHandler
     settings:
-      PRODUCT_BUNDLE_IDENTIFIER: agency.serra.patova.CallDirectory
-      DEVELOPMENT_TEAM: ""
+      PRODUCT_BUNDLE_IDENTIFIER: com.serra.app.patova.CallDirectory
+      DEVELOPMENT_TEAM: "2AHHY43UG2"
       CODE_SIGN_ENTITLEMENTS: CallDirectory.entitlements
+
+schemes:
+  Patova:
+    build:
+      targets:
+        Patova: all
+      parallelizeBuild: true
+    run:
+      config: Debug
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug

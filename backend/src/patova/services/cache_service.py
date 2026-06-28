@@ -55,3 +55,17 @@ async def invalidate_validate_cache(client: redis.Redis, number_e164: str) -> No
         return
     key = _cache_key(number_e164)
     await client.delete(key)
+
+
+async def invalidate_validate_cache_range(
+    client: redis.Redis, start_number: int, end_number: int
+) -> None:
+    settings = get_settings()
+    if not settings.validate_cache_enabled:
+        return
+    pipeline = client.pipeline()
+    for num in range(start_number, end_number + 1):
+        key = _cache_key(f"+{num}")
+        pipeline.delete(key)
+    await pipeline.execute()
+
