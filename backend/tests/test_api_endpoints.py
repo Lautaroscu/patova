@@ -3,6 +3,7 @@ import io
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import delete, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from patova.core.config import get_settings
@@ -64,7 +65,7 @@ class TestApiEndpoints:
         # 1. Enviar lote de reportes
         payload = {
             "device_id": "test-android-batch-device",
-            "numbers": [549111234200, 549111234500]  # Pertenecen al mismo millar: 549111234000
+            "numbers": [5491161234200, 5491161234500]  # Pertenecen al mismo millar: 541161234000 (normalizado)
         }
 
         # Intentar sin API Key
@@ -80,7 +81,7 @@ class TestApiEndpoints:
         assert data["numeros_nuevos_guardados"] == 1000
 
         # Verificar en la base de datos que las semillas tienen is_predicted=False
-        stmt = select(PhoneNumber).where(PhoneNumber.phone_number.in_([549111234200, 549111234500]))
+        stmt = select(PhoneNumber).where(PhoneNumber.phone_number.in_([541161234200, 541161234500]))
         res = await clean_db.execute(stmt)
         phones = res.scalars().all()
         assert len(phones) == 2
@@ -88,7 +89,7 @@ class TestApiEndpoints:
             assert p.is_predicted is False
 
         # Verificar que un número adyacente tiene is_predicted=True
-        stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 549111234000)
+        stmt = select(PhoneNumber).where(PhoneNumber.phone_number == 541161234000)
         res = await clean_db.execute(stmt)
         phone_adj = res.scalar_one_or_none()
         assert phone_adj is not None
@@ -216,5 +217,46 @@ class TestApiEndpoints:
         stmt_pred_after = select(PhoneNumber).where(PhoneNumber.phone_number == 541112345100)
         res_pred_after = await clean_db.execute(stmt_pred_after)
         assert res_pred_after.scalar_one_or_none() is None
+
+    async def test_admin_delete_block_legacy_endpoint(self, client: AsyncClient, clean_db):
+        # 1. Insertar manualmente un rango legacy (sin prefijo 54) en la BD
+        from patova.models.enums import NumberStatus, NumberSource
+        
+        insert_values = []
+        for i in range(2262550000, 2262551000):
+            is_pred = (i != 2262550389)
+            insert_values.append({
+                "phone_number": i,
+                "is_predicted": is_pred,
+                "status": NumberStatus.SPAM,
+                "spam_score": 90,
+                "source": NumberSource.CROWDSOURCE,
+            })
+            
+        stmt = pg_insert(PhoneNumber).values(insert_values)
+        await clean_db.execute(stmt)
+        await clean_db.commit()
+
+        # Verificar que existan en la BD
+        stmt_check = select(PhoneNumber).where(PhoneNumber.phone_number == 2262550389)
+        res = await clean_db.execute(stmt_check)
+        assert res.scalar_one_or_none() is not None
+
+        # 2. Revertir/Eliminar usando el número normalizado con prefijo 54
+        payload_delete = {
+            "phone_number": "+5492262550389"
+        }
+        res_del = await client.post("/v1/admin/delete-block", json=payload_delete, headers=_admin_headers())
+        assert res_del.status_code == 200
+        data_del = res_del.json()
+        assert data_del["status"] == "success"
+        # Debería haber detectado y borrado el bloque legacy (1000 registros)
+        assert data_del["registros_eliminados"] == 1000
+
+        # Verificar que se hayan borrado de la BD
+        stmt_after = select(PhoneNumber).where(PhoneNumber.phone_number == 2262550389)
+        res_after = await clean_db.execute(stmt_after)
+        assert res_after.scalar_one_or_none() is None
+
 
 

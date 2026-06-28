@@ -17,6 +17,7 @@ from patova.models.enums import NumberSource, NumberStatus
 from patova.models.phone_number import PhoneNumber
 from patova.schemas.reports import AndroidReportBatch, ReportRequest, ReportResponse
 from patova.services.abuse_guard import check_dedupe, check_report_quota, record_report
+from patova.services.phone_normalization import normalize_to_e164
 from patova.services.report_service import process_report
 from patova.services.rate_limit import get_limiter
 from patova.services.spam_engine import SpamEngineService
@@ -102,9 +103,24 @@ async def report_spam_batch(
             detail="El lote supera el límite máximo de 50 números por solicitud."
         )
 
+    # 1. Normalizar cada número usando normalize_to_e164
+    normalized_numbers = []
+    for num in payload.numbers:
+        norm = normalize_to_e164(str(num))
+        if norm:
+            normalized_numbers.append(int(norm.lstrip("+")))
+        else:
+            log.warning("Número de lote inválido omitido: %s", num)
+
+    if not normalized_numbers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ninguno de los números provistos en el lote es válido."
+        )
+
     try:
-        # 1. Ejecutar la deduplicación y expansión en memoria
-        processed_data = SpamEngineService.expand_batch(payload.numbers)
+        # 2. Ejecutar la deduplicación y expansión en memoria
+        processed_data = SpamEngineService.expand_batch(normalized_numbers)
 
         # 2. Construir valores a insertar
         insert_values = [

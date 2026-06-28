@@ -124,7 +124,7 @@ class SpamEngineService:
 
         start_range, end_range = cls.get_block_bounds(phone_number)
 
-        stmt = delete(PhoneNumber).where(
+        conditions = (
             (PhoneNumber.phone_number == phone_number) |
             (
                 (PhoneNumber.phone_number >= start_range) &
@@ -132,6 +132,23 @@ class SpamEngineService:
                 (PhoneNumber.is_predicted == True)
             )
         )
+
+        if str(phone_number).startswith("54"):
+            try:
+                legacy_num = int(str(phone_number)[2:])
+                legacy_start, legacy_end = cls.get_block_bounds(legacy_num)
+                conditions = conditions | (
+                    (PhoneNumber.phone_number == legacy_num) |
+                    (
+                        (PhoneNumber.phone_number >= legacy_start) &
+                        (PhoneNumber.phone_number <= legacy_end) &
+                        (PhoneNumber.is_predicted == True)
+                    )
+                )
+            except ValueError:
+                pass
+
+        stmt = delete(PhoneNumber).where(conditions)
         res = cast(CursorResult, await db.execute(stmt))
         await db.commit()
         return res.rowcount, start_range, end_range

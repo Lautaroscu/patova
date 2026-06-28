@@ -122,7 +122,7 @@ class TestProductionResilience:
         # 1. Test batch size limit (> 50 numbers)
         payload = {
             "device_id": "abuse-device-id",
-            "numbers": list(range(549111234000, 549111234055))  # 55 números (> 50)
+            "numbers": list(range(5491161234000, 5491161234055))  # 55 números (> 50)
         }
         response = await client.post("/v1/reports/batch", json=payload, headers=_headers())
         assert response.status_code == 400
@@ -131,7 +131,7 @@ class TestProductionResilience:
         # 2. Test rate limit (max 5/minute)
         valid_payload = {
             "device_id": "abuse-device-id-2",
-            "numbers": [549111234100]
+            "numbers": [5491161234100]
         }
 
         # Realizar 5 peticiones exitosas consecutivas
