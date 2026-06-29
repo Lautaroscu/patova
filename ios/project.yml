@@ -38,6 +38,7 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.serra.app.patova
       DEVELOPMENT_TEAM: "2AHHY43UG2"
+      CODE_SIGN_STYLE: Automatic
       CODE_SIGN_ENTITLEMENTS: Patova.entitlements
     dependencies:
       - target: CallDirectory
@@ -58,6 +59,7 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.serra.app.patova.CallDirectory
       DEVELOPMENT_TEAM: "2AHHY43UG2"
+      CODE_SIGN_STYLE: Automatic
       CODE_SIGN_ENTITLEMENTS: CallDirectory.entitlements
 
 schemes:

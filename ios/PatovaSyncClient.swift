@@ -154,6 +154,9 @@ public final class PatovaSyncClient {
         UserDefaults.standard.set(syncResult.syncTimestamp, forKey: lastSyncKey)
         print("✅ Patova: Sincronización local de SQLite finalizada.")
         
+        // 6.5. Generar archivo binario plano para la lista de bloqueados
+        DatabaseManager.shared.generateBinaryBlockedList()
+        
         // 7. Notificar a iOS CallKit que debe recargar la extensión de bloqueo inmediatamente
         try await reloadCallKitExtension()
     }

@@ -3,6 +3,7 @@ from typing import AsyncGenerator, Dict, List, Set, Tuple
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from patova.models.enums import NumberStatus
 from patova.models.phone_number import PhoneNumber
 
 
@@ -75,8 +76,13 @@ class SpamEngineService:
         Generador asíncrono (async yield) que hace streaming de los números ordenados ascendentemente
         para evitar picos de memoria en el backend al armar el archivo para iOS.
         """
-        # El ORDER BY ASC es ley para que CallKit indexe correctamente en iOS
-        stmt = select(PhoneNumber.phone_number).order_by(PhoneNumber.phone_number.asc())
+        # El ORDER BY ASC es ley para que CallKit indexe correctamente en iOS.
+        # Filtramos solo los números con estado SPAM activo.
+        stmt = (
+            select(PhoneNumber.phone_number)
+            .where(PhoneNumber.status == NumberStatus.SPAM)
+            .order_by(PhoneNumber.phone_number.asc())
+        )
 
         # Se ejecuta el stream con await para obtener el objeto ChunkedIteratorResult
         result = await db.stream(stmt)

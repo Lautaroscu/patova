@@ -189,4 +189,84 @@ public final class DatabaseManager {
         sqlite3_finalize(statement)
         return count
     }
+    
+    // MARK: - Streaming Consultas para CallKit
+    
+    /// Obtiene en streaming los números destinados a bloqueo absoluto para evitar picos de memoria.
+    public func streamBlockingNumbers(threshold: Int = 75, callback: (Int64) -> Void) {
+        let query = "SELECT phone_number FROM spam_entries WHERE spam_score >= ? ORDER BY phone_number ASC;"
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(threshold))
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                autoreleasepool {
+                    let number = sqlite3_column_int64(statement, 0)
+                    callback(number)
+                }
+            }
+        }
+        sqlite3_finalize(statement)
+    }
+    
+    /// Obtiene en streaming los números y etiquetas para identificación de llamadas para evitar picos de memoria.
+    public func streamIdentificationEntries(threshold: Int = 75, callback: (Int64, String) -> Void) {
+        let query = "SELECT phone_number, label FROM spam_entries WHERE spam_score < ? ORDER BY phone_number ASC;"
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(threshold))
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                autoreleasepool {
+                    let number = sqlite3_column_int64(statement, 0)
+                    let labelCString = sqlite3_column_text(statement, 1)
+                    let label = labelCString != nil ? String(cString: labelCString!) : "Patova: Posible Spam"
+                    callback(number, label)
+                }
+            }
+        }
+        sqlite3_finalize(statement)
+    }
+    
+    /// Genera un archivo binario plano conteniendo la lista de números bloqueados ordenada ascendentemente.
+    /// Esto es llamado por la Main App después de sincronizar con el servidor.
+    public func generateBinaryBlockedList() {
+        let query = "SELECT phone_number FROM spam_entries WHERE spam_score >= ? ORDER BY phone_number ASC;"
+        var statement: OpaquePointer?
+        var numbers = [Int64]()
+        
+        // 1. Obtener la lista ordenada de SQLite
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, 75) // Umbral de bloqueo duro
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let number = sqlite3_column_int64(statement, 0)
+                if number > 0 {
+                    numbers.append(number)
+                }
+            }
+        }
+        sqlite3_finalize(statement)
+        
+        // 2. Obtener ruta del contenedor compartido
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            print("❌ Patova DB: No se pudo obtener el contenedor de App Group para guardar el binario.")
+            return
+        }
+        let fileURL = containerURL.appendingPathComponent("blocked_numbers.bin")
+        
+        // 3. Serializar el array de Int64 a Data binaria pura
+        let data = numbers.withUnsafeBufferPointer { buffer in
+            return Data(buffer: buffer)
+        }
+        
+        // 4. Guardar archivo de forma atómica en disco
+        do {
+            try data.write(to: fileURL, options: .atomic)
+            print("💾 Patova DB: Archivo binario generado exitosamente en \(fileURL.lastPathComponent). Total números: \(numbers.count). Peso: \(data.count / 1024) KB")
+        } catch {
+            print("❌ Patova DB: Error escribiendo binario de bloqueados: \(error.localizedDescription)")
+        }
+    }
 }

@@ -31,40 +31,64 @@ public final class CallDirectoryHandler: CXCallDirectoryProvider {
         context.completeRequest()
     }
 
-    /// Lee la base de datos SQLite compartida e inyecta los números a bloquear.
+    /// Lee el archivo binario plano e inyecta los números a bloquear.
     /// CallKit requiere obligatoriamente que estén ordenados ascendentemente.
     private func addAllBlockingPhoneNumbers(to context: CXCallDirectoryExtensionContext) -> Bool {
-        // Obtenemos los números con score >= 75 (Spam severo) de SQLite.
-        // La consulta de SQLite ya devuelve la lista ordenada ascendentemente por 'phone_number'.
-        let blockedNumbers = DatabaseManager.shared.getBlockingNumbers(threshold: 75)
+        print("🚫 Patova Extension: Iniciando streaming binario de números bloqueados...")
         
-        print("🚫 Patova Extension: Inyectando \(blockedNumbers.count) números bloqueados...")
+        guard let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.serra.app.patova") else {
+            print("❌ Patova Extension: App Group URL no disponible.")
+            // Intentamos fallback a SQLite si no está disponible el contenedor
+            return fallbackToSQLiteBlocking(to: context)
+        }
+        let fileURL = containerURL.appendingPathComponent("blocked_numbers.bin")
         
-        for number in blockedNumbers {
-            // Evitar inyectar el número 0 que rompe CallKit
-            guard number > 0 else { continue }
-            context.addBlockingEntry(withNextSequentialPhoneNumber: number)
+        guard let fileHandle = try? FileHandle(forReadingFrom: fileURL) else {
+            print("⚠️ Patova Extension: No se encontró el archivo binario. Usando SQLite como fallback...")
+            return fallbackToSQLiteBlocking(to: context)
+        }
+        defer {
+            try? fileHandle.close()
         }
         
+        let bufferSize = 4096 // 4 KB por lectura
+        let elementSize = MemoryLayout<Int64>.size
+        
+        while true {
+            let data = fileHandle.readData(ofLength: bufferSize)
+            if data.isEmpty { break }
+            
+            data.withUnsafeBytes { (rawBuffer: UnsafeRawBufferPointer) in
+                let count = rawBuffer.count / elementSize
+                let typedBuffer = rawBuffer.bindMemory(to: Int64.self)
+                
+                for i in 0..<count {
+                    let number = typedBuffer[i]
+                    guard number > 0 else { continue }
+                    context.addBlockingEntry(withNextSequentialPhoneNumber: number)
+                }
+            }
+        }
+        
+        return true
+    }
+    
+    /// Fallback en caso de que falte el binario
+    private func fallbackToSQLiteBlocking(to context: CXCallDirectoryExtensionContext) -> Bool {
+        DatabaseManager.shared.streamBlockingNumbers(threshold: 75) { number in
+            guard number > 0 else { return }
+            context.addBlockingEntry(withNextSequentialPhoneNumber: number)
+        }
         return true
     }
 
     /// Lee la base de datos SQLite compartida e inyecta los números sospechosos para mostrar la etiqueta.
     /// CallKit requiere obligatoriamente que estén ordenados ascendentemente por número de teléfono.
     private func addAllIdentificationPhoneNumbers(to context: CXCallDirectoryExtensionContext) -> Bool {
-        // Obtenemos los números con score < 75 (Sospechosos / Repartos) y sus etiquetas.
-        // La consulta ya está indexada y ordenada de menor a mayor.
-        let entries = DatabaseManager.shared.getIdentificationEntries(threshold: 75)
-        let numbers = entries.numbers
-        let labels = entries.labels
+        print("ℹ️ Patova Extension: Iniciando streaming de identificadores de pantalla...")
         
-        print("ℹ️ Patova Extension: Inyectando \(numbers.count) identificadores de pantalla...")
-        
-        for index in 0..<numbers.count {
-            let number = numbers[index]
-            let label = labels[index]
-            
-            guard number > 0 else { continue }
+        DatabaseManager.shared.streamIdentificationEntries(threshold: 75) { number, label in
+            guard number > 0 else { return }
             // Registramos el número y la etiqueta que aparecerá en pantalla nativa (ej: "Patova: Cobranzas")
             context.addIdentificationEntry(withNextSequentialPhoneNumber: number, label: label)
         }
