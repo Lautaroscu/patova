@@ -12,22 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,7 +50,7 @@ fun BlockedCallScreen(
         ) {
             // Top label
             Text(
-                text = "LLAMADA BLOQUEADA",
+                text = "LLAMADA FRENADA",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
@@ -68,26 +62,21 @@ fun BlockedCallScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Shield with X
+            // El patovica frenó la llamada en la puerta
             Box(
-                modifier = Modifier.size(60.dp),
+                modifier = Modifier
+                    .size(76.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(DangerRedBg),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Security,
-                    contentDescription = null,
-                    tint = DangerRed,
-                    modifier = Modifier.size(60.dp)
-                )
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = null,
-                    tint = DangerRed,
-                    modifier = Modifier.size(28.dp)
+                PatovaMascot(
+                    modifier = Modifier.size(44.dp),
+                    color = DangerRed
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Phone number
             Text(
@@ -104,7 +93,7 @@ fun BlockedCallScreen(
 
             // Reason pill
             PillTag(
-                text = "Bot detectado · Base de spam PATOVA",
+                text = "Bot detectado · Comunidad Patova",
                 backgroundColor = DangerRedBg,
                 textColor = DangerRed
             )
@@ -115,7 +104,7 @@ fun BlockedCallScreen(
             Divider(
                 modifier = Modifier.fillMaxWidth(),
                 thickness = 0.5.dp,
-                color = Color(0xFF1A1228)
+                color = DividerColor
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -126,7 +115,7 @@ fun BlockedCallScreen(
                     text = "Score de riesgo",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp,
-                        color = Color(0xFF5A3060)
+                        color = TextMuted
                     )
                 )
 
@@ -138,7 +127,7 @@ fun BlockedCallScreen(
                         .fillMaxWidth()
                         .height(6.dp)
                         .clip(RoundedCornerShape(3.dp))
-                        .background(Color(0xFF1A1228))
+                        .background(Navy800)
                 ) {
                     Box(
                         modifier = Modifier
@@ -169,16 +158,16 @@ fun BlockedCallScreen(
                     text = "Reportado por",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.sp,
-                        color = Color(0xFF3A2030)
+                        color = TextMuted
                     )
                 )
                 Text(
-                    text = "2.647 usuarios PATOVA",
+                    text = "2.647 usuarios Patova",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = Color(0xFF6A4060)
+                    color = TextSecondary
                 )
             }
         }
@@ -191,10 +180,10 @@ fun BlockedCallScreen(
             Button(
                 onClick = onConfirmBlock,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = DangerRed,
-                    contentColor = Color.White
+                    contentColor = TextPrimary
                 )
             ) {
                 Text(
@@ -211,11 +200,11 @@ fun BlockedCallScreen(
             OutlinedButton(
                 onClick = onAllowAnyway,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF5A3060)
+                    contentColor = TextMuted
                 ),
-                border = BorderStroke(0.5.dp, Color(0xFF2A1A28))
+                border = BorderStroke(0.5.dp, BorderSubtle)
             ) {
                 Text(
                     text = "Permitir de todas formas",

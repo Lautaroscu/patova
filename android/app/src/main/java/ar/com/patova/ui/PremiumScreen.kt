@@ -174,7 +174,9 @@ fun PremiumScreen(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                color = PremiumBlue
+                // Azul de marca de Mercado Pago (no el accent de Patova):
+                // este texto imita su isologo de dos tonos, no debe seguir el theme.
+                color = Color(0xFF00AAE4)
             )
             Text(
                 text = "Pago",
@@ -220,6 +222,7 @@ private fun BreakdownRow(
         }
         if (showDivider) {
             Divider(
+                modifier = Modifier.padding(vertical = 2.dp),
                 thickness = 0.5.dp,
                 color = DividerColor
             )

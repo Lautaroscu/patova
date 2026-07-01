@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Share
@@ -114,15 +113,11 @@ fun NetworkScreen(
                 Box(
                     modifier = Modifier
                         .size(64.dp)
+                        .clip(RoundedCornerShape(16.dp))
                         .background(PremiumBlueBg, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.Language,
-                        contentDescription = null,
-                        tint = PremiumBlue,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    RotatingGlobe3D(modifier = Modifier.size(52.dp))
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -302,7 +297,7 @@ private fun TopReportedList(numbers: List<TopReportedNumber>) {
                     }
                     if (index < numbers.size - 1) {
                         Divider(
-                            color = Color(0xFF1E2538),
+                            color = DividerColor,
                             thickness = 1.dp,
                             modifier = Modifier.padding(vertical = 4.dp)
                         )

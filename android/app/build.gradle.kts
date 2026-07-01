@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
@@ -47,7 +48,7 @@ val patovaReleaseBaseUrl = if (rawReleaseBaseUrl.startsWith("\"") && rawReleaseB
 
 android {
     namespace = "ar.com.patova"
-    compileSdk = 34
+    compileSdk = 35 // bumped from 34: required by io.github.sceneview:sceneview:4.18.0
 
     signingConfigs {
         create("release") {
@@ -110,9 +111,9 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
-    }
+    // Compose compiler is now configured by the org.jetbrains.kotlin.plugin.compose
+    // Gradle plugin (kotlin.compose) applied above; composeOptions.kotlinCompilerExtensionVersion
+    // is no longer used/needed with Kotlin 2.0+.
 
     packaging {
         resources {
@@ -140,6 +141,9 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
+
+    // 3D globe icon in the "Red" (Network) screen header
+    implementation(libs.sceneview)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
